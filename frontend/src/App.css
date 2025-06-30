@@ -147,3 +147,113 @@
     max-width: calc(100% - 2rem);
   }
 }
+
+/* Enhanced Modal Styles */
+.zoom-container {
+  overflow: hidden;
+  position: relative;
+}
+
+.zoomable-image {
+  transition: transform 0.2s ease-in-out;
+  cursor: grab;
+}
+
+.zoomable-image:active {
+  cursor: grabbing;
+}
+
+.interactive-svg {
+  pointer-events: none;
+}
+
+.interactive-svg rect,
+.interactive-svg circle,
+.interactive-svg text {
+  pointer-events: auto;
+}
+
+.defect-box {
+  transition: stroke-width 0.2s ease;
+}
+
+.defect-box:hover {
+  stroke-width: 4px !important;
+}
+
+.delete-button {
+  transition: all 0.2s ease;
+}
+
+.delete-button:hover {
+  transform: scale(1.1);
+}
+
+/* Custom scrollbar for modal */
+.modal-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.modal-scrollbar::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.modal-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.modal-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Smooth animations */
+.fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.slide-in {
+  animation: slideIn 0.3s ease-in-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+/* Button hover effects */
+.control-button {
+  transition: all 0.2s ease;
+}
+
+.control-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Box visibility indicators */
+.box-visible {
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+.box-hidden {
+  opacity: 0.3;
+  transition: opacity 0.3s ease;
+}
