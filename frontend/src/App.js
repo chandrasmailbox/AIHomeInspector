@@ -130,6 +130,12 @@ const VideoUpload = ({ onAnalysisComplete }) => {
 
 const ResultsDisplay = ({ results, onBack }) => {
   const [selectedFrame, setSelectedFrame] = useState(null);
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
+  const [hiddenBoxes, setHiddenBoxes] = useState(new Set());
+  const [isPanning, setIsPanning] = useState(false);
+  const [panStart, setPanStart] = useState({ x: 0, y: 0 });
+  const [isMaximized, setIsMaximized] = useState(false);
 
   const getSeverityColor = (severity) => {
     switch (severity) {
