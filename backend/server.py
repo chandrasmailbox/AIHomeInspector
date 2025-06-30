@@ -468,6 +468,95 @@ async def get_inspection(inspection_id: str):
         raise HTTPException(status_code=404, detail="Inspection not found")
     return DefectDetection(**inspection)
 
+@api_router.post("/inspection/{inspection_id}/corrections")
+async def save_user_corrections(inspection_id: str, frame_correction: FrameCorrection):
+    """Save user corrections for a specific frame"""
+    try:
+        # Find the inspection
+        inspection = await db.inspections.find_one({"id": inspection_id})
+        if not inspection:
+            raise HTTPException(status_code=404, detail="Inspection not found")
+        
+        # Update user corrections
+        frame_key = str(frame_correction.frame_number)
+        corrections_dict = {}
+        
+        if "user_corrections" not in inspection:
+            inspection["user_corrections"] = {}
+        
+        # Convert corrections to dict format
+        corrections_dict[frame_key] = [correction.dict() for correction in frame_correction.corrections]
+        
+        # Update the inspection with user corrections
+        await db.inspections.update_one(
+            {"id": inspection_id},
+            {"$set": {f"user_corrections.{frame_key}": corrections_dict[frame_key]}}
+        )
+        
+        return {"message": "Corrections saved successfully"}
+        
+    except Exception as e:
+        logging.error(f"Error saving corrections: {e}")
+        raise HTTPException(status_code=500, detail=f"Error saving corrections: {e}")
+
+@api_router.get("/inspection/{inspection_id}/frame/{frame_number}/regenerate")
+async def regenerate_frame_with_corrections(inspection_id: str, frame_number: int):
+    """Regenerate frame image with user corrections applied"""
+    try:
+        # Get the inspection
+        inspection = await db.inspections.find_one({"id": inspection_id})
+        if not inspection:
+            raise HTTPException(status_code=404, detail="Inspection not found")
+        
+        # Find the specific frame
+        frame_data = None
+        for frame in inspection["defects_found"]:
+            if frame["frame_number"] == frame_number:
+                frame_data = frame
+                break
+        
+        if not frame_data:
+            raise HTTPException(status_code=404, detail="Frame not found")
+        
+        # Get user corrections for this frame
+        user_corrections = inspection.get("user_corrections", {}).get(str(frame_number), [])
+        
+        # Apply corrections to defects
+        updated_defects = []
+        for defect in frame_data["defects"]:
+            updated_boxes = []
+            for box in defect.get("boxes", []):
+                box_id = box.get("id") if isinstance(box, dict) else None
+                
+                # Check if this box has user corrections
+                correction_found = False
+                for correction in user_corrections:
+                    if correction.get("box_id") == box_id:
+                        if isinstance(box, dict):
+                            box["visible"] = not correction.get("is_hidden", False)
+                        correction_found = True
+                        break
+                
+                updated_boxes.append(box)
+            
+            defect["boxes"] = updated_boxes
+            updated_defects.append(defect)
+        
+        # Regenerate the frame image with corrections applied
+        # For now, we'll return the original frame with visibility applied in frontend
+        # In a more advanced implementation, we could regenerate the actual image
+        
+        return {
+            "frame_number": frame_number,
+            "defects": updated_defects,
+            "confidence_score": frame_data["confidence_score"],
+            "frame_image": frame_data["frame_image"]
+        }
+        
+    except Exception as e:
+        logging.error(f"Error regenerating frame: {e}")
+        raise HTTPException(status_code=500, detail=f"Error regenerating frame: {e}")
+
 # Include the router in the main app
 app.include_router(api_router)
 
