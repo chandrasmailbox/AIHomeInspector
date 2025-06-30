@@ -215,8 +215,17 @@ def draw_defect_boxes(image, defects_with_boxes):
         color = colors.get(defect_type.split()[0], (255, 255, 255))  # Default white
         
         # Draw bounding boxes
-        for box in boxes:
-            x, y, w, h = box
+        for box_info in boxes:
+            if isinstance(box_info, dict):
+                # New format with IDs
+                if box_info.get('visible', True):  # Only draw visible boxes
+                    x, y, w, h = box_info['coords']
+                else:
+                    continue  # Skip hidden boxes
+            else:
+                # Old format (backward compatibility)
+                x, y, w, h = box_info
+            
             # Draw rectangle
             cv2.rectangle(annotated_image, (x, y), (x + w, y + h), color, 2)
             
