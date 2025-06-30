@@ -27,6 +27,14 @@ class HomeInspectorAPITester:
         url = f"{self.api_url}/{endpoint}"
         headers = {}
         
+        # Set content type for JSON data
+        if data and isinstance(data, str):
+            try:
+                json.loads(data)  # Validate JSON
+                headers['Content-Type'] = 'application/json'
+            except:
+                pass
+        
         self.tests_run += 1
         print(f"\n🔍 Testing {name}...")
         
@@ -34,7 +42,10 @@ class HomeInspectorAPITester:
             if method == 'GET':
                 response = requests.get(url, headers=headers)
             elif method == 'POST':
-                response = requests.post(url, data=data, files=files, headers=headers)
+                if headers.get('Content-Type') == 'application/json':
+                    response = requests.post(url, data=data, headers=headers)
+                else:
+                    response = requests.post(url, data=data, files=files, headers=headers)
 
             success = response.status_code == expected_status
             if success:
