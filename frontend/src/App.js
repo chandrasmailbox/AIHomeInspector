@@ -420,55 +420,264 @@ const ResultsDisplay = ({ results, onBack }) => {
         </div>
       </div>
 
-      {/* Selected Frame Modal */}
+      {/* Enhanced Selected Frame Modal with Zoom and Interactive Boxes */}
       {selectedFrame && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-4xl max-h-screen overflow-y-auto p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-semibold">Frame {selectedFrame.frame_number} - Annotated Defects</h3>
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
+          <div className={`bg-white rounded-lg ${isMaximized ? 'max-w-7xl max-h-screen' : 'max-w-5xl max-h-[90vh]'} overflow-hidden flex flex-col`}>
+            {/* Modal Header */}
+            <div className="flex justify-between items-center p-4 border-b bg-gray-50">
+              <div className="flex items-center space-x-4">
+                <h3 className="text-xl font-semibold">Frame {selectedFrame.frame_number} - Interactive Analysis</h3>
+                <div className="flex items-center space-x-2 text-sm text-gray-600">
+                  <span>Zoom: {Math.round(zoomLevel * 100)}%</span>
+                  {zoomLevel > 1 && <span className="text-blue-600">• Click and drag to pan</span>}
+                </div>
+              </div>
               <button
                 onClick={() => setSelectedFrame(null)}
-                className="text-gray-500 hover:text-gray-700 text-2xl"
+                className="text-gray-500 hover:text-gray-700 text-2xl p-1"
               >
                 ×
               </button>
             </div>
-            
-            <div className="mb-4 p-3 bg-blue-50 rounded-lg">
-              <p className="text-sm text-blue-800">
-                <strong>💡 Tip:</strong> Colored boxes show exact defect locations. Each color represents a different defect type.
-              </p>
+
+            {/* Controls Bar */}
+            <div className="p-3 border-b bg-gray-50 flex flex-wrap items-center justify-between gap-2">
+              {/* Zoom Controls */}
+              <div className="flex items-center space-x-2">
+                <span className="text-sm font-medium text-gray-700">Zoom:</span>
+                <button
+                  onClick={zoomOut}
+                  disabled={zoomLevel <= 0.5}
+                  className="px-2 py-1 bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 disabled:text-gray-400 rounded text-sm"
+                >
+                  −
+                </button>
+                <button
+                  onClick={resetZoom}
+                  className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded text-sm"
+                >
+                  Reset
+                </button>
+                <button
+                  onClick={zoomIn}
+                  disabled={zoomLevel >= 5}
+                  className="px-2 py-1 bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 disabled:text-gray-400 rounded text-sm"
+                >
+                  +
+                </button>
+                <button
+                  onClick={maximizeImage}
+                  className="px-3 py-1 bg-purple-500 hover:bg-purple-600 text-white rounded text-sm"
+                >
+                  {isMaximized ? 'Normal' : 'Maximize'}
+                </button>
+              </div>
+
+              {/* Box Controls */}
+              <div className="flex items-center space-x-2">
+                <span className="text-sm font-medium text-gray-700">Boxes:</span>
+                <button
+                  onClick={showAllBoxes}
+                  className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded text-sm"
+                >
+                  Show All
+                </button>
+                <button
+                  onClick={hideAllBoxes}
+                  className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-sm"
+                >
+                  Hide All
+                </button>
+                <span className="text-xs text-gray-500">
+                  ({selectedFrame.defects.reduce((acc, defect) => acc + (defect.boxes?.length || 0), 0) - hiddenBoxes.size} visible)
+                </span>
+              </div>
             </div>
-            
-            <img
-              src={`data:image/jpeg;base64,${selectedFrame.frame_image}`}
-              alt={`Frame ${selectedFrame.frame_number} with annotations`}
-              className="w-full max-w-md mx-auto rounded mb-4 border shadow-lg"
-            />
-            
-            <div className="space-y-3">
-              <h4 className="font-semibold">Detected Defects with Locations:</h4>
-              {selectedFrame.defects.map((defect, index) => (
-                <div key={index} className="bg-gray-50 p-3 rounded">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium flex items-center">
-                      <div className={`w-4 h-4 rounded mr-2 ${getDefectColor(defect.type)}`}></div>
-                      {getDefectIcon(defect.type)} {defect.type}
-                    </span>
-                    <span className="text-sm text-gray-600">
-                      {(defect.confidence * 100).toFixed(1)}% confidence
-                    </span>
+
+            {/* Image Container */}
+            <div className="flex-1 flex overflow-hidden">
+              {/* Main Image Area */}
+              <div className="flex-1 relative overflow-hidden bg-gray-100">
+                <div className="relative h-full flex items-center justify-center">
+                  <div
+                    className="relative inline-block cursor-grab active:cursor-grabbing select-none"
+                    style={{
+                      transform: `scale(${zoomLevel}) translate(${panOffset.x / zoomLevel}px, ${panOffset.y / zoomLevel}px)`,
+                      transformOrigin: 'center center'
+                    }}
+                    onMouseDown={handleMouseDown}
+                    onMouseMove={handleMouseMove}
+                    onMouseUp={handleMouseUp}
+                    onMouseLeave={handleMouseUp}
+                  >
+                    <img
+                      src={`data:image/jpeg;base64,${selectedFrame.frame_image}`}
+                      alt={`Frame ${selectedFrame.frame_number} with annotations`}
+                      className="max-w-none block"
+                      style={{ 
+                        maxHeight: isMaximized ? '70vh' : '50vh',
+                        userSelect: 'none',
+                        pointerEvents: 'none'
+                      }}
+                      draggable={false}
+                    />
+                    
+                    {/* Interactive Bounding Boxes Overlay */}
+                    <svg
+                      className="absolute inset-0 w-full h-full pointer-events-none"
+                      style={{ 
+                        pointerEvents: zoomLevel > 1 ? 'none' : 'auto'
+                      }}
+                    >
+                      {selectedFrame.defects.map((defect, defectIndex) => 
+                        defect.boxes?.map((box, boxIndex) => {
+                          const boxId = box.id || `${defect.type}_${defectIndex}_${boxIndex}`;
+                          const isHidden = hiddenBoxes.has(boxId);
+                          const coords = box.coords || box;
+                          
+                          if (isHidden || !coords) return null;
+                          
+                          const [x, y, w, h] = Array.isArray(coords) ? coords : [coords.x, coords.y, coords.w, coords.h];
+                          const color = getDefectColor(defect.type);
+                          
+                          return (
+                            <g key={boxId}>
+                              {/* Bounding Box Rectangle */}
+                              <rect
+                                x={x}
+                                y={y}
+                                width={w}
+                                height={h}
+                                fill="transparent"
+                                stroke={color.replace('bg-', '').replace('-500', '')}
+                                strokeWidth="3"
+                                className="hover:stroke-4 cursor-pointer transition-all"
+                                style={{ pointerEvents: 'auto' }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleBoxVisibility(boxId, defect.type);
+                                }}
+                              />
+                              
+                              {/* Delete Button */}
+                              <circle
+                                cx={x + w - 8}
+                                cy={y + 8}
+                                r="8"
+                                fill="rgba(239, 68, 68, 0.9)"
+                                className="hover:fill-red-600 cursor-pointer"
+                                style={{ pointerEvents: 'auto' }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleBoxVisibility(boxId, defect.type);
+                                }}
+                              />
+                              <text
+                                x={x + w - 8}
+                                y={y + 8}
+                                textAnchor="middle"
+                                dominantBaseline="central"
+                                fill="white"
+                                fontSize="10"
+                                fontWeight="bold"
+                                className="cursor-pointer"
+                                style={{ pointerEvents: 'auto' }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleBoxVisibility(boxId, defect.type);
+                                }}
+                              >
+                                ×
+                              </text>
+                              
+                              {/* Label */}
+                              <rect
+                                x={x}
+                                y={y - 25}
+                                width={Math.min(w, 150)}
+                                height="20"
+                                fill="rgba(0, 0, 0, 0.8)"
+                                rx="2"
+                              />
+                              <text
+                                x={x + 4}
+                                y={y - 10}
+                                fill="white"
+                                fontSize="12"
+                                fontWeight="bold"
+                              >
+                                {defect.type}: {Math.round(defect.confidence * 100)}%
+                              </text>
+                            </g>
+                          );
+                        })
+                      )}
+                    </svg>
                   </div>
-                  {defect.description && (
-                    <p className="text-sm text-gray-600 mt-1">{defect.description}</p>
-                  )}
-                  {defect.boxes && defect.boxes.length > 0 && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      📍 {defect.boxes.length} location(s) marked with colored boxes
-                    </p>
-                  )}
                 </div>
-              ))}
+              </div>
+
+              {/* Side Panel with Defect List */}
+              <div className="w-80 border-l bg-gray-50 p-4 overflow-y-auto">
+                <h4 className="font-semibold mb-3 text-gray-800">Detected Defects ({selectedFrame.defects.length})</h4>
+                
+                {/* Instructions */}
+                <div className="mb-4 p-3 bg-blue-50 rounded-lg text-sm">
+                  <p className="text-blue-800 font-medium mb-1">💡 How to use:</p>
+                  <ul className="text-blue-700 space-y-1 text-xs">
+                    <li>• Click on colored boxes to hide/show defects</li>
+                    <li>• Use zoom controls to inspect details</li>
+                    <li>• Drag to pan when zoomed in</li>
+                    <li>• Changes are saved automatically</li>
+                  </ul>
+                </div>
+
+                <div className="space-y-3">
+                  {selectedFrame.defects.map((defect, index) => (
+                    <div key={index} className="bg-white p-3 rounded border">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-medium flex items-center">
+                          <div className={`w-4 h-4 rounded mr-2 ${getDefectColor(defect.type)}`}></div>
+                          {getDefectIcon(defect.type)} {defect.type}
+                        </span>
+                        <span className="text-sm text-gray-600">
+                          {(defect.confidence * 100).toFixed(1)}%
+                        </span>
+                      </div>
+                      
+                      {defect.description && (
+                        <p className="text-sm text-gray-600 mb-2">{defect.description}</p>
+                      )}
+                      
+                      {defect.boxes && (
+                        <div className="text-xs text-gray-500">
+                          <p className="mb-1">Bounding boxes: {defect.boxes.length}</p>
+                          <div className="flex flex-wrap gap-1">
+                            {defect.boxes.map((box, boxIndex) => {
+                              const boxId = box.id || `${defect.type}_${index}_${boxIndex}`;
+                              const isHidden = hiddenBoxes.has(boxId);
+                              return (
+                                <button
+                                  key={boxIndex}
+                                  onClick={() => toggleBoxVisibility(boxId, defect.type)}
+                                  className={`px-2 py-1 rounded text-xs ${
+                                    isHidden 
+                                      ? 'bg-gray-200 text-gray-500' 
+                                      : 'bg-blue-100 text-blue-800'
+                                  }`}
+                                >
+                                  Box {boxIndex + 1} {isHidden ? '(hidden)' : '(visible)'}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </div>
