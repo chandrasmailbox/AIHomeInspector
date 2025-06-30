@@ -137,6 +137,114 @@ const ResultsDisplay = ({ results, onBack }) => {
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const [isMaximized, setIsMaximized] = useState(false);
 
+  // Reset zoom and pan when frame changes
+  const resetImageView = () => {
+    setZoomLevel(1);
+    setPanOffset({ x: 0, y: 0 });
+    setIsMaximized(false);
+  };
+
+  // Handle frame selection
+  const handleFrameSelect = (frame) => {
+    setSelectedFrame(frame);
+    resetImageView();
+    setHiddenBoxes(new Set()); // Reset hidden boxes for new frame
+  };
+
+  // Zoom functions
+  const zoomIn = () => {
+    setZoomLevel(prev => Math.min(prev * 1.5, 5));
+  };
+
+  const zoomOut = () => {
+    setZoomLevel(prev => Math.max(prev / 1.5, 0.5));
+  };
+
+  const resetZoom = () => {
+    setZoomLevel(1);
+    setPanOffset({ x: 0, y: 0 });
+  };
+
+  const maximizeImage = () => {
+    setIsMaximized(!isMaximized);
+    if (!isMaximized) {
+      setZoomLevel(2);
+      setPanOffset({ x: 0, y: 0 });
+    } else {
+      resetZoom();
+    }
+  };
+
+  // Pan functions
+  const handleMouseDown = (e) => {
+    if (zoomLevel > 1) {
+      setIsPanning(true);
+      setPanStart({ x: e.clientX - panOffset.x, y: e.clientY - panOffset.y });
+    }
+  };
+
+  const handleMouseMove = (e) => {
+    if (isPanning && zoomLevel > 1) {
+      setPanOffset({
+        x: e.clientX - panStart.x,
+        y: e.clientY - panStart.y
+      });
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsPanning(false);
+  };
+
+  // Box management functions
+  const toggleBoxVisibility = async (boxId, defectType) => {
+    const newHiddenBoxes = new Set(hiddenBoxes);
+    
+    if (hiddenBoxes.has(boxId)) {
+      newHiddenBoxes.delete(boxId);
+    } else {
+      newHiddenBoxes.add(boxId);
+    }
+    
+    setHiddenBoxes(newHiddenBoxes);
+
+    // Save to backend
+    try {
+      const corrections = [{
+        box_id: boxId,
+        defect_type: defectType,
+        is_hidden: !hiddenBoxes.has(boxId),
+        user_feedback: "User manually adjusted defect visibility"
+      }];
+
+      await axios.post(`${API}/inspection/${results.id}/corrections`, {
+        inspection_id: results.id,
+        frame_number: selectedFrame.frame_number,
+        corrections: corrections
+      });
+    } catch (error) {
+      console.error('Error saving correction:', error);
+    }
+  };
+
+  const showAllBoxes = () => {
+    setHiddenBoxes(new Set());
+  };
+
+  const hideAllBoxes = () => {
+    if (selectedFrame) {
+      const allBoxIds = new Set();
+      selectedFrame.defects.forEach(defect => {
+        defect.boxes?.forEach(box => {
+          if (box.id) {
+            allBoxIds.add(box.id);
+          }
+        });
+      });
+      setHiddenBoxes(allBoxIds);
+    }
+  };
+
   const getSeverityColor = (severity) => {
     switch (severity) {
       case 'high': return 'text-red-600 bg-red-100';
