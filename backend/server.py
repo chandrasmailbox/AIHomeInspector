@@ -52,6 +52,13 @@ def load_models():
         logging.error(f"Error loading models: {e}")
 
 # Define Models
+class UserCorrection(BaseModel):
+    box_id: str
+    defect_type: str
+    is_hidden: bool = False
+    user_feedback: str = ""
+    correction_timestamp: datetime = Field(default_factory=datetime.utcnow)
+
 class DefectDetection(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     filename: str
@@ -59,6 +66,7 @@ class DefectDetection(BaseModel):
     total_frames: int
     defects_found: List[Dict[str, Any]]
     summary: Dict[str, Any]
+    user_corrections: Dict[str, List[UserCorrection]] = Field(default_factory=dict)
 
 class DefectFrame(BaseModel):
     frame_number: int
@@ -66,6 +74,11 @@ class DefectFrame(BaseModel):
     defects: List[Dict[str, Any]]
     confidence_score: float
     frame_image: str  # base64 encoded
+
+class FrameCorrection(BaseModel):
+    inspection_id: str
+    frame_number: int
+    corrections: List[UserCorrection]
 
 # AI Detection Functions
 def detect_cracks_opencv(image):
