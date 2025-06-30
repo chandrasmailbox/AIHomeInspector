@@ -268,6 +268,95 @@ class HomeInspectorAPITester:
                 print(f"Removed test video: {self.test_video_path}")
             except Exception as e:
                 print(f"Error removing test video: {str(e)}")
+                
+    def test_save_corrections(self):
+        """Test saving user corrections for a frame"""
+        if not hasattr(self, 'last_inspection_id') or not self.last_inspection_id:
+            print("❌ No inspection ID available for correction test")
+            return False
+            
+        if not hasattr(self, 'test_frame_number') or not hasattr(self, 'test_box_id'):
+            print("❌ No frame number or box ID available for correction test")
+            return False
+            
+        print(f"\n🔍 Testing User Corrections API...")
+        self.tests_run += 1
+        
+        try:
+            # Create correction data
+            correction_data = {
+                "inspection_id": self.last_inspection_id,
+                "frame_number": self.test_frame_number,
+                "corrections": [
+                    {
+                        "box_id": self.test_box_id,
+                        "defect_type": self.test_defect_type,
+                        "is_hidden": True,
+                        "user_feedback": "Test correction from API test"
+                    }
+                ]
+            }
+            
+            # Send correction
+            success, response = self.run_test(
+                "Save User Corrections",
+                "POST",
+                f"inspection/{self.last_inspection_id}/corrections",
+                200,
+                data=json.dumps(correction_data),
+                files=None
+            )
+            
+            if success:
+                print("✅ Successfully saved user corrections")
+                self.tests_passed += 1
+                
+                # Now test regenerating the frame with corrections
+                self.test_regenerate_frame()
+                
+            return success
+            
+        except Exception as e:
+            print(f"❌ Error testing corrections API: {str(e)}")
+            return False
+            
+    def test_regenerate_frame(self):
+        """Test regenerating a frame with applied corrections"""
+        if not hasattr(self, 'last_inspection_id') or not self.last_inspection_id:
+            print("❌ No inspection ID available for regeneration test")
+            return False
+            
+        if not hasattr(self, 'test_frame_number'):
+            print("❌ No frame number available for regeneration test")
+            return False
+            
+        print(f"\n🔍 Testing Frame Regeneration API...")
+        self.tests_run += 1
+        
+        try:
+            # Request regenerated frame
+            success, response = self.run_test(
+                "Regenerate Frame with Corrections",
+                "GET",
+                f"inspection/{self.last_inspection_id}/frame/{self.test_frame_number}/regenerate",
+                200
+            )
+            
+            if success:
+                print("✅ Successfully regenerated frame with corrections")
+                
+                # Check if the response contains the expected data
+                if 'defects' in response and 'frame_image' in response:
+                    print("✅ Regenerated frame contains defects and image data")
+                    self.tests_passed += 1
+                else:
+                    print("❌ Regenerated frame missing expected data")
+                    
+            return success
+            
+        except Exception as e:
+            print(f"❌ Error testing frame regeneration: {str(e)}")
+            return False
 
 def main():
     # Setup
