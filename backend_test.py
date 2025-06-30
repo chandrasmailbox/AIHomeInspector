@@ -14,7 +14,7 @@ from PIL import Image
 import io
 
 class HomeInspectorAPITester:
-    def __init__(self, base_url="https://c47a728a-04bc-4679-acda-08269eb9cf07.preview.emergentagent.com"):
+    def __init__(self, base_url="https://087b1f8b-1747-415a-b2bf-14b3d872fecc.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.tests_run = 0
