@@ -240,6 +240,24 @@ class HomeInspectorAPITester:
             if 'defects_found' in response:
                 self.test_bounding_box_data(response['defects_found'])
                 self.test_frame_annotations(response['defects_found'])
+                
+                # Store a frame number for correction testing
+                if len(response['defects_found']) > 0:
+                    self.test_frame_number = response['defects_found'][0]['frame_number']
+                    
+                    # Find a box ID to test with
+                    for frame in response['defects_found']:
+                        for defect in frame['defects']:
+                            if 'boxes' in defect and defect['boxes']:
+                                for box in defect['boxes']:
+                                    if isinstance(box, dict) and 'id' in box:
+                                        self.test_box_id = box['id']
+                                        self.test_defect_type = defect['type']
+                                        break
+                                if hasattr(self, 'test_box_id'):
+                                    break
+                        if hasattr(self, 'test_box_id'):
+                            break
         return success
 
     def cleanup(self):
