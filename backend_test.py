@@ -387,6 +387,11 @@ def main():
         if tester.last_inspection_id:
             if not tester.test_get_inspection_by_id(tester.last_inspection_id):
                 print("❌ Get inspection by ID test failed")
+                
+            # Test the corrections API
+            if hasattr(tester, 'test_frame_number') and hasattr(tester, 'test_box_id'):
+                if not tester.test_save_corrections():
+                    print("❌ Save corrections test failed")
         
         # Print results
         print(f"\n📊 Tests passed: {tester.tests_passed}/{tester.tests_run}")
