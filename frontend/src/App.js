@@ -393,7 +393,7 @@ const ResultsDisplay = ({ results, onBack }) => {
             <div
               key={index}
               className="border rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow"
-              onClick={() => setSelectedFrame(frame)}
+              onClick={() => handleFrameSelect(frame)}
             >
               <img
                 src={`data:image/jpeg;base64,${frame.frame_image}`}
