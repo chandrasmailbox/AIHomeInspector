@@ -244,11 +244,21 @@ def analyze_frame(frame_data):
     # 1. Crack detection with OpenCV
     has_cracks, crack_confidence, crack_contours, crack_boxes = detect_cracks_opencv(image_array)
     if has_cracks:
+        # Create boxes with unique IDs
+        boxes_with_ids = []
+        for i, box in enumerate(crack_boxes):
+            box_id = f"crack_{frame_number}_{i}_{uuid.uuid4().hex[:8]}"
+            boxes_with_ids.append({
+                "id": box_id,
+                "coords": box,
+                "visible": True
+            })
+        
         defect_info = {
             "type": "cracks",
             "confidence": crack_confidence,
             "description": f"Potential cracks detected with {crack_confidence:.2f} confidence",
-            "boxes": crack_boxes
+            "boxes": boxes_with_ids
         }
         defects.append(defect_info)
         defects_with_boxes.append(defect_info)
@@ -256,11 +266,21 @@ def analyze_frame(frame_data):
     # 2. Water damage detection
     has_water_damage, water_confidence, water_boxes = detect_water_damage(image_array)
     if has_water_damage:
+        # Create boxes with unique IDs
+        boxes_with_ids = []
+        for i, box in enumerate(water_boxes):
+            box_id = f"water_{frame_number}_{i}_{uuid.uuid4().hex[:8]}"
+            boxes_with_ids.append({
+                "id": box_id,
+                "coords": box,
+                "visible": True
+            })
+        
         defect_info = {
             "type": "water_damage", 
             "confidence": water_confidence,
             "description": f"Water damage detected with {water_confidence:.2f} confidence",
-            "boxes": water_boxes
+            "boxes": boxes_with_ids
         }
         defects.append(defect_info)
         defects_with_boxes.append(defect_info)
@@ -268,16 +288,23 @@ def analyze_frame(frame_data):
     # 3. CLIP-based defect detection (no specific boxes for CLIP, use general areas)
     if clip_model and clip_processor:
         clip_defects = detect_defects_with_clip(image_array, clip_model, clip_processor)
-        for clip_defect in clip_defects:
+        for i, clip_defect in enumerate(clip_defects):
             # For CLIP detections, create a general bounding box (center area)
             h, w = image_array.shape[:2]
-            general_box = [(w//4, h//4, w//2, h//2)]  # Center area
+            general_box = (w//4, h//4, w//2, h//2)
+            box_id = f"{clip_defect['type'].replace(' ', '_')}_{frame_number}_{i}_{uuid.uuid4().hex[:8]}"
+            
+            boxes_with_ids = [{
+                "id": box_id,
+                "coords": general_box,
+                "visible": True
+            }]
             
             defect_info = {
                 "type": clip_defect["type"],
                 "confidence": clip_defect["confidence"],
                 "description": f"{clip_defect['type']} detected with {clip_defect['confidence']:.2f} confidence",
-                "boxes": general_box
+                "boxes": boxes_with_ids
             }
             defects.append(defect_info)
             defects_with_boxes.append(defect_info)
