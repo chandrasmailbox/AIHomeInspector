@@ -568,14 +568,15 @@ const ResultsDisplay = ({ results, onBack }) => {
                           const isHidden = hiddenBoxes.has(boxId);
                           const coords = box.coords || box;
                           
-                          if (isHidden || !coords) return null;
+                          // Only skip rendering if explicitly hidden
+                          if (!coords) return null;
                           
                           const [x, y, w, h] = Array.isArray(coords) ? coords : [coords.x, coords.y, coords.w, coords.h];
                           const strokeColor = getDefectStrokeColor(defect.type);
                           const bgColor = getTextBackgroundColor(defect.type);
                           
                           return (
-                            <g key={boxId}>
+                            <g key={boxId} className={isHidden ? 'hidden-defect-box' : 'visible-defect-box'}>
                               {/* Bounding Box Rectangle */}
                               <rect
                                 x={x}
@@ -588,8 +589,9 @@ const ResultsDisplay = ({ results, onBack }) => {
                                 className="hover:stroke-4 cursor-pointer transition-all defect-box"
                                 style={{ 
                                   pointerEvents: 'auto',
-                                  opacity: isHidden ? 0.3 : 1,
-                                  strokeDasharray: isHidden ? '10,5' : 'none'
+                                  opacity: isHidden ? 0.2 : 1,
+                                  strokeDasharray: isHidden ? '10,5' : 'none',
+                                  strokeOpacity: isHidden ? 0.5 : 1
                                 }}
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -597,65 +599,94 @@ const ResultsDisplay = ({ results, onBack }) => {
                                 }}
                               />
                               
-                              {/* Delete Button */}
-                              <circle
-                                cx={x + w - 12}
-                                cy={y + 12}
-                                r="10"
-                                fill="rgba(239, 68, 68, 0.9)"
-                                stroke="white"
-                                strokeWidth="2"
-                                className="hover:fill-red-600 cursor-pointer delete-button"
-                                style={{ pointerEvents: 'auto' }}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  toggleBoxVisibility(boxId, defect.type);
-                                }}
-                              />
-                              <text
-                                x={x + w - 12}
-                                y={y + 12}
-                                textAnchor="middle"
-                                dominantBaseline="central"
-                                fill="white"
-                                fontSize="12"
-                                fontWeight="bold"
-                                className="cursor-pointer"
-                                style={{ pointerEvents: 'auto' }}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  toggleBoxVisibility(boxId, defect.type);
-                                }}
-                              >
-                                ×
-                              </text>
+                              {/* Delete Button - only show if not hidden */}
+                              {!isHidden && (
+                                <>
+                                  <circle
+                                    cx={x + w - 12}
+                                    cy={y + 12}
+                                    r="10"
+                                    fill="rgba(239, 68, 68, 0.9)"
+                                    stroke="white"
+                                    strokeWidth="2"
+                                    className="hover:fill-red-600 cursor-pointer delete-button"
+                                    style={{ pointerEvents: 'auto' }}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleBoxVisibility(boxId, defect.type);
+                                    }}
+                                  />
+                                  <text
+                                    x={x + w - 12}
+                                    y={y + 12}
+                                    textAnchor="middle"
+                                    dominantBaseline="central"
+                                    fill="white"
+                                    fontSize="12"
+                                    fontWeight="bold"
+                                    className="cursor-pointer"
+                                    style={{ pointerEvents: 'auto' }}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleBoxVisibility(boxId, defect.type);
+                                    }}
+                                  >
+                                    ×
+                                  </text>
+                                </>
+                              )}
                               
-                              {/* Label with improved visibility */}
-                              <rect
-                                x={x}
-                                y={y - 30}
-                                width={Math.min(w, 200)}
-                                height="25"
-                                fill={bgColor}
-                                stroke="white"
-                                strokeWidth="1"
-                                rx="3"
-                                opacity="0.95"
-                              />
-                              <text
-                                x={x + 6}
-                                y={y - 10}
-                                fill="white"
-                                fontSize="12"
-                                fontWeight="bold"
-                                textShadow="1px 1px 2px rgba(0,0,0,0.8)"
-                                style={{ 
-                                  filter: 'drop-shadow(1px 1px 2px rgba(0,0,0,0.8))',
-                                  fontFamily: 'Arial, sans-serif'
-                                }}
-                              >
-                                {defect.type.replace('_', ' ')}: {Math.round(defect.confidence * 100)}%
-                              </text>
+                              {/* Label with improved visibility - only show if not hidden */}
+                              {!isHidden && (
+                                <>
+                                  <rect
+                                    x={x}
+                                    y={y - 30}
+                                    width={Math.min(w, 200)}
+                                    height="25"
+                                    fill={bgColor}
+                                    stroke="white"
+                                    strokeWidth="1"
+                                    rx="3"
+                                    opacity="0.95"
+                                  />
+                                  <text
+                                    x={x + 6}
+                                    y={y - 10}
+                                    fill="white"
+                                    fontSize="12"
+                                    fontWeight="bold"
+                                    className="defect-label"
+                                    style={{ 
+                                      filter: 'drop-shadow(1px 1px 2px rgba(0,0,0,0.8))',
+                                      fontFamily: 'Arial, sans-serif'
+                                    }}
+                                  >
+                                    {defect.type.replace('_', ' ')}: {Math.round(defect.confidence * 100)}%
+                                  </text>
+                                </>
+                              )}
+                              
+                              {/* Hidden indicator */}
+                              {isHidden && (
+                                <text
+                                  x={x + w/2}
+                                  y={y + h/2}
+                                  textAnchor="middle"
+                                  dominantBaseline="central"
+                                  fill="rgba(107, 114, 128, 0.8)"
+                                  fontSize="14"
+                                  fontWeight="bold"
+                                  className="cursor-pointer"
+                                  style={{ pointerEvents: 'auto' }}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleBoxVisibility(boxId, defect.type);
+                                  }}
+                                >
+                                  👁️‍🗨️
+                                </text>
+                              )}
                             </g>
                           );
                         })
