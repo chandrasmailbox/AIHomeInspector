@@ -182,6 +182,70 @@ def detect_water_damage(image):
     
     return has_damage, confidence, damage_boxes
 
+def detect_defects_with_yolo(image):
+    """Use YOLO model for object detection"""
+    try:
+        if yolo_model is None:
+            return []
+            
+        # Run YOLO detection
+        results = yolo_model(image)
+        detections = []
+        
+        for result in results:
+            boxes = result.boxes
+            if boxes is not None:
+                for i, box in enumerate(boxes):
+                    # Get coordinates
+                    x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
+                    confidence = float(box.conf[0].cpu().numpy())
+                    class_id = int(box.cls[0].cpu().numpy())
+                    
+                    # Map YOLO classes to defect types (simplified mapping)
+                    class_names = yolo_model.names
+                    detected_object = class_names.get(class_id, 'unknown')
+                    
+                    # Map to defect types based on detected objects
+                    defect_type = map_yolo_to_defect(detected_object)
+                    
+                    if defect_type and confidence > 0.3:
+                        box_id = f"yolo_{defect_type}_{i}_{uuid.uuid4().hex[:8]}"
+                        detections.append({
+                            "type": defect_type,
+                            "confidence": confidence,
+                            "description": f"{defect_type} detected by YOLO with {confidence:.2f} confidence",
+                            "boxes": [{
+                                "id": box_id,
+                                "coords": [int(x1), int(y1), int(x2-x1), int(y2-y1)],
+                                "visible": True
+                            }]
+                        })
+        
+        return detections
+    except Exception as e:
+        logging.error(f"YOLO detection error: {e}")
+        return []
+
+def map_yolo_to_defect(yolo_class):
+    """Map YOLO detected objects to defect types"""
+    defect_mapping = {
+        'crack': 'cracks',
+        'damage': 'structural_damage',
+        'stain': 'water_damage',
+        'mold': 'mold',
+        'rust': 'rust',
+        'hole': 'structural_damage',
+        'person': None,  # Ignore people
+        'car': None,     # Ignore vehicles
+        'furniture': None # Ignore furniture
+    }
+    
+    for key, value in defect_mapping.items():
+        if key.lower() in yolo_class.lower():
+            return value
+    
+    # For any unrecognized object, consider it as potential structural issue
+    return 'potential_defect'
 def detect_defects_with_clip(image, clip_model, clip_processor):
     """Use CLIP model to classify various defects"""
     try:
