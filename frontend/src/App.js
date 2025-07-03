@@ -511,18 +511,18 @@ const ResultsDisplay = ({ results, onBack }) => {
                 <span className="text-sm font-medium text-gray-700">Boxes:</span>
                 <button
                   onClick={showAllBoxes}
-                  className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded text-sm"
+                  className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded text-sm control-button"
                 >
                   Show All
                 </button>
                 <button
                   onClick={hideAllBoxes}
-                  className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-sm"
+                  className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-sm control-button"
                 >
                   Hide All
                 </button>
-                <span className="text-xs text-gray-500">
-                  ({selectedFrame.defects.reduce((acc, defect) => acc + (defect.boxes?.length || 0), 0) - hiddenBoxes.size} visible)
+                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                  {selectedFrame.defects.reduce((acc, defect) => acc + (defect.boxes?.length || 0), 0) - hiddenBoxes.size} visible / {selectedFrame.defects.reduce((acc, defect) => acc + (defect.boxes?.length || 0), 0)} total
                 </span>
               </div>
             </div>
