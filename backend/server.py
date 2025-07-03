@@ -44,10 +44,12 @@ executor = ThreadPoolExecutor(max_workers=2)
 def load_models():
     global clip_model, clip_processor
     try:
-        # Load CLIP model for defect classification
-        clip_model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
-        clip_processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
-        logging.info("AI models loaded successfully")
+        # Commented out for testing
+        # clip_model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
+        # clip_processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+        clip_model = None
+        clip_processor = None
+        logging.info("AI models loading skipped for testing")
     except Exception as e:
         logging.error(f"Error loading models: {e}")
 
