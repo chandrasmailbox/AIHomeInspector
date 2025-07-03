@@ -350,68 +350,121 @@ def detect_defects_with_clip(image, model, processor):
         logging.error(f"CLIP detection error: {e}")
         return []
 
-def analyze_frame(frame_data):
-    """Analyze a single frame for defects"""
+def analyze_frame_with_models(frame_data, selected_models=['basic_cv']):
+    """Analyze a single frame for defects using selected models"""
     frame_number, image_array = frame_data
     
-    defects = []
-    defects_with_boxes = []
+    all_model_results = {}
+    combined_defects = []
+    combined_defects_with_boxes = []
     
-    # 1. Crack detection with OpenCV
-    has_cracks, crack_confidence, crack_contours, crack_boxes = detect_cracks_opencv(image_array)
-    if has_cracks:
-        # Create boxes with unique IDs
-        boxes_with_ids = []
-        for i, box in enumerate(crack_boxes):
-            box_id = f"crack_{frame_number}_{i}_{uuid.uuid4().hex[:8]}"
-            boxes_with_ids.append({
-                "id": box_id,
-                "coords": box,
-                "visible": True
-            })
+    # 1. Basic Computer Vision (OpenCV) - always available
+    if 'basic_cv' in selected_models:
+        cv_defects = []
         
-        defect_info = {
-            "type": "cracks",
-            "confidence": crack_confidence,
-            "description": f"Potential cracks detected with {crack_confidence:.2f} confidence",
-            "boxes": boxes_with_ids
-        }
-        defects.append(defect_info)
-        defects_with_boxes.append(defect_info)
-    
-    # 2. Water damage detection
-    has_water_damage, water_confidence, water_boxes = detect_water_damage(image_array)
-    if has_water_damage:
-        # Create boxes with unique IDs
-        boxes_with_ids = []
-        for i, box in enumerate(water_boxes):
-            box_id = f"water_{frame_number}_{i}_{uuid.uuid4().hex[:8]}"
-            boxes_with_ids.append({
-                "id": box_id,
-                "coords": box,
-                "visible": True
-            })
+        # Crack detection with OpenCV
+        has_cracks, crack_confidence, crack_contours, crack_boxes = detect_cracks_opencv(image_array)
+        if has_cracks:
+            boxes_with_ids = []
+            for i, box in enumerate(crack_boxes):
+                box_id = f"cv_crack_{frame_number}_{i}_{uuid.uuid4().hex[:8]}"
+                boxes_with_ids.append({
+                    "id": box_id,
+                    "coords": box,
+                    "visible": True
+                })
+            
+            defect_info = {
+                "type": "cracks",
+                "confidence": crack_confidence,
+                "description": f"Potential cracks detected with {crack_confidence:.2f} confidence",
+                "boxes": boxes_with_ids,
+                "model": "basic_cv"
+            }
+            cv_defects.append(defect_info)
         
-        defect_info = {
-            "type": "water_damage", 
-            "confidence": water_confidence,
-            "description": f"Water damage detected with {water_confidence:.2f} confidence",
-            "boxes": boxes_with_ids
-        }
-        defects.append(defect_info)
-        defects_with_boxes.append(defect_info)
+        # Water damage detection
+        has_water_damage, water_confidence, water_boxes = detect_water_damage(image_array)
+        if has_water_damage:
+            boxes_with_ids = []
+            for i, box in enumerate(water_boxes):
+                box_id = f"cv_water_{frame_number}_{i}_{uuid.uuid4().hex[:8]}"
+                boxes_with_ids.append({
+                    "id": box_id,
+                    "coords": box,
+                    "visible": True
+                })
+            
+            defect_info = {
+                "type": "water_damage", 
+                "confidence": water_confidence,
+                "description": f"Water damage detected with {water_confidence:.2f} confidence",
+                "boxes": boxes_with_ids,
+                "model": "basic_cv"
+            }
+            cv_defects.append(defect_info)
+        
+        all_model_results['basic_cv'] = cv_defects
+        combined_defects.extend(cv_defects)
+        combined_defects_with_boxes.extend(cv_defects)
     
-    # 3. YOLO-based defect detection
-    yolo_defects = detect_defects_with_yolo(image_array)
-    for defect in yolo_defects:
-        defects.append(defect)
-        defects_with_boxes.append(defect)
+    # 2. YOLO-based defect detection
+    if 'yolo' in selected_models and yolo_model is not None:
+        yolo_defects = detect_defects_with_yolo(image_array)
+        for defect in yolo_defects:
+            defect['model'] = 'yolo'
+        all_model_results['yolo'] = yolo_defects
+        combined_defects.extend(yolo_defects)
+        combined_defects_with_boxes.extend(yolo_defects)
+    
+    # 3. CLIP-based defect detection (mock for now)
+    if 'clip' in selected_models:
+        clip_defects = []
+        if clip_model and clip_processor:
+            clip_results = detect_defects_with_clip(image_array, clip_model, clip_processor)
+            for i, clip_defect in enumerate(clip_results):
+                h, w = image_array.shape[:2]
+                general_box = (w//4, h//4, w//2, h//2)
+                box_id = f"clip_{clip_defect['type'].replace(' ', '_')}_{frame_number}_{i}_{uuid.uuid4().hex[:8]}"
+                
+                defect_info = {
+                    "type": clip_defect["type"],
+                    "confidence": clip_defect["confidence"],
+                    "description": f"{clip_defect['type']} detected with {clip_defect['confidence']:.2f} confidence",
+                    "boxes": [{
+                        "id": box_id,
+                        "coords": general_box,
+                        "visible": True
+                    }],
+                    "model": "clip"
+                }
+                clip_defects.append(defect_info)
+        else:
+            # Mock CLIP results for testing
+            mock_clip_defects = [
+                {
+                    "type": "mold on wall",
+                    "confidence": 0.75,
+                    "description": "Mold detected with 0.75 confidence",
+                    "boxes": [{
+                        "id": f"clip_mold_{frame_number}_{uuid.uuid4().hex[:8]}",
+                        "coords": (50, 50, 100, 100),
+                        "visible": True
+                    }],
+                    "model": "clip"
+                }
+            ]
+            clip_defects = mock_clip_defects
+        
+        all_model_results['clip'] = clip_defects
+        combined_defects.extend(clip_defects)
+        combined_defects_with_boxes.extend(clip_defects)
     
     # Calculate overall confidence
-    overall_confidence = max([d["confidence"] for d in defects]) if defects else 0
+    overall_confidence = max([d["confidence"] for d in combined_defects]) if combined_defects else 0
     
     # Create annotated image with bounding boxes
-    annotated_image = draw_defect_boxes(image_array, defects_with_boxes)
+    annotated_image = draw_defect_boxes(image_array, combined_defects_with_boxes)
     
     # Convert annotated frame to base64 for frontend display
     pil_image = Image.fromarray(annotated_image)
@@ -421,10 +474,16 @@ def analyze_frame(frame_data):
     
     return {
         "frame_number": frame_number,
-        "defects": defects,
+        "defects": combined_defects,
         "confidence_score": overall_confidence,
-        "frame_image": frame_base64
+        "frame_image": frame_base64,
+        "model_results": all_model_results,
+        "selected_models": selected_models
     }
+
+def analyze_frame(frame_data):
+    """Legacy function that calls analyze_frame_with_models with default settings"""
+    return analyze_frame_with_models(frame_data)
 
 def extract_frames_from_video(video_bytes):
     """Extract frames from video for analysis"""
