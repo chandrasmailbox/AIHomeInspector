@@ -233,6 +233,7 @@ const ResultsDisplay = ({ results, onBack }) => {
 
   const showAllBoxes = () => {
     setHiddenBoxes(new Set());
+    console.log('All boxes are now visible');
   };
 
   const hideAllBoxes = () => {
@@ -240,12 +241,12 @@ const ResultsDisplay = ({ results, onBack }) => {
       const allBoxIds = new Set();
       selectedFrame.defects.forEach(defect => {
         defect.boxes?.forEach(box => {
-          if (box.id) {
-            allBoxIds.add(box.id);
-          }
+          const boxId = box.id || `${defect.type}_${selectedFrame.defects.indexOf(defect)}_${defect.boxes.indexOf(box)}`;
+          allBoxIds.add(boxId);
         });
       });
       setHiddenBoxes(allBoxIds);
+      console.log(`All ${allBoxIds.size} boxes are now hidden`);
     }
   };
 
