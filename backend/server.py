@@ -82,6 +82,14 @@ class UserCorrection(BaseModel):
     user_feedback: str = ""
     correction_timestamp: datetime = Field(default_factory=datetime.utcnow)
 
+class ModelSelection(BaseModel):
+    selected_models: List[str] = Field(default=['basic_cv'])
+    ensemble_method: str = Field(default='weighted_average')
+    confidence_threshold: float = Field(default=0.5)
+
+class InspectionRequest(BaseModel):
+    model_selection: ModelSelection = Field(default_factory=ModelSelection)
+
 class DefectDetection(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     filename: str
@@ -90,6 +98,8 @@ class DefectDetection(BaseModel):
     defects_found: List[Dict[str, Any]]
     summary: Dict[str, Any]
     user_corrections: Dict[str, List[UserCorrection]] = Field(default_factory=dict)
+    model_results: Dict[str, Any] = Field(default_factory=dict)  # Store results from different models
+    selected_models: List[str] = Field(default=['basic_cv'])
 
 class DefectFrame(BaseModel):
     frame_number: int
