@@ -246,62 +246,7 @@ def map_yolo_to_defect(yolo_class):
     
     # For any unrecognized object, consider it as potential structural issue
     return 'potential_defect'
-def detect_defects_with_clip(image, clip_model, clip_processor):
-    """Use CLIP model to classify various defects"""
-    try:
-        # For testing, return mock data when models are not available
-        if clip_model is None or clip_processor is None:
-            # Return mock defect data
-            return [
-                {
-                    "type": "mold on wall",
-                    "confidence": 0.75
-                },
-                {
-                    "type": "paint peeling off wall",
-                    "confidence": 0.65
-                }
-            ]
-            
-        # Define defect categories to check
-        defect_texts = [
-            "mold on wall",
-            "paint peeling off wall", 
-            "water stains on ceiling",
-            "damaged wood",
-            "rust on metal",
-            "broken tiles",
-            "damaged flooring"
-        ]
-        
-        # Prepare inputs
-        inputs = clip_processor(
-            text=defect_texts, 
-            images=image, 
-            return_tensors="pt", 
-            padding=True
-        )
-        
-        # Get predictions
-        with torch.no_grad():
-            outputs = clip_model(**inputs)
-            logits_per_image = outputs.logits_per_image
-            probs = logits_per_image.softmax(dim=1)
-        
-        # Get results
-        results = []
-        for i, defect_type in enumerate(defect_texts):
-            confidence = float(probs[0][i])
-            if confidence > 0.15:  # Threshold for detection
-                results.append({
-                    "type": defect_type,
-                    "confidence": confidence
-                })
-        
-        return results
-    except Exception as e:
-        logging.error(f"CLIP detection error: {e}")
-        return []
+
 
 def draw_defect_boxes(image, defects_with_boxes):
     """Draw colored bounding boxes on image for detected defects"""
