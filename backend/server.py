@@ -48,6 +48,8 @@ api_router = APIRouter(prefix="/api")
 # Global variables for models
 clip_model = None
 clip_processor = None
+yolo_model = None
+available_models = ['basic_cv', 'yolo', 'clip']
 executor = ThreadPoolExecutor(max_workers=2)
 
 # Initialize AI models
