@@ -277,6 +277,33 @@ const ResultsDisplay = ({ results, onBack }) => {
     return colors[type.split(' ')[0]] || 'bg-gray-500';
   };
 
+  const getDefectStrokeColor = (type) => {
+    const colors = {
+      'cracks': '#ef4444',
+      'water_damage': '#3b82f6',
+      'mold': '#10b981',
+      'paint': '#eab308',
+      'rust': '#f97316',
+      'tiles': '#8b5cf6',
+      'flooring': '#ec4899'
+    };
+    return colors[type.split(' ')[0]] || '#6b7280';
+  };
+
+  const getTextBackgroundColor = (type) => {
+    // Use darker colors for better contrast
+    const colors = {
+      'cracks': '#dc2626',
+      'water_damage': '#1d4ed8',
+      'mold': '#047857',
+      'paint': '#ca8a04',
+      'rust': '#ea580c',
+      'tiles': '#7c3aed',
+      'flooring': '#db2777'
+    };
+    return colors[type.split(' ')[0]] || '#374151';
+  };
+
   // Color legend for defect types
   const DefectLegend = () => (
     <div className="bg-white rounded-lg shadow-lg p-4 mb-6">
