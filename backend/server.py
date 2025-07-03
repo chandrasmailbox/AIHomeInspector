@@ -405,29 +405,11 @@ def analyze_frame(frame_data):
         defects.append(defect_info)
         defects_with_boxes.append(defect_info)
     
-    # 3. CLIP-based defect detection (no specific boxes for CLIP, use general areas)
-    if clip_model and clip_processor:
-        clip_defects = detect_defects_with_clip(image_array, clip_model, clip_processor)
-        for i, clip_defect in enumerate(clip_defects):
-            # For CLIP detections, create a general bounding box (center area)
-            h, w = image_array.shape[:2]
-            general_box = (w//4, h//4, w//2, h//2)
-            box_id = f"{clip_defect['type'].replace(' ', '_')}_{frame_number}_{i}_{uuid.uuid4().hex[:8]}"
-            
-            boxes_with_ids = [{
-                "id": box_id,
-                "coords": general_box,
-                "visible": True
-            }]
-            
-            defect_info = {
-                "type": clip_defect["type"],
-                "confidence": clip_defect["confidence"],
-                "description": f"{clip_defect['type']} detected with {clip_defect['confidence']:.2f} confidence",
-                "boxes": boxes_with_ids
-            }
-            defects.append(defect_info)
-            defects_with_boxes.append(defect_info)
+    # 3. YOLO-based defect detection
+    yolo_defects = detect_defects_with_yolo(image_array)
+    for defect in yolo_defects:
+        defects.append(defect)
+        defects_with_boxes.append(defect)
     
     # Calculate overall confidence
     overall_confidence = max([d["confidence"] for d in defects]) if defects else 0
