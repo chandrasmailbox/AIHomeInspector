@@ -708,13 +708,14 @@ const ResultsDisplay = ({ results, onBack }) => {
                                 <button
                                   key={boxIndex}
                                   onClick={() => toggleBoxVisibility(boxId, defect.type)}
-                                  className={`px-2 py-1 rounded text-xs ${
+                                  className={`px-2 py-1 rounded text-xs font-medium transition-all hover:scale-105 ${
                                     isHidden 
-                                      ? 'bg-gray-200 text-gray-500' 
-                                      : 'bg-blue-100 text-blue-800'
+                                      ? 'bg-gray-200 text-gray-500 border border-gray-300' 
+                                      : `bg-blue-100 text-blue-800 border border-blue-300 shadow-sm`
                                   }`}
+                                  title={isHidden ? 'Click to show this box' : 'Click to hide this box'}
                                 >
-                                  Box {boxIndex + 1} {isHidden ? '(hidden)' : '(visible)'}
+                                  {isHidden ? '👁️‍🗨️' : '👁️'} Box {boxIndex + 1}
                                 </button>
                               );
                             })}
