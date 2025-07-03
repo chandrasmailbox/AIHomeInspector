@@ -101,3 +101,61 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: "Fix defect boxes visibility issues - some boxes not able to hide and text on boxes not visible, specifically yellow box text not visible"
+
+backend:
+  - task: "Backend defect detection API"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Backend API is working correctly for defect detection and user corrections"
+
+frontend:
+  - task: "Fix defect box visibility toggle functionality"
+    implemented: true
+    working: false
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "main"
+        comment: "User reports some defect boxes cannot be hidden and text labels not visible, particularly yellow boxes"
+
+  - task: "Fix defect box text visibility and contrast"
+    implemented: true
+    working: false
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "main"
+        comment: "Text labels on defect boxes have poor visibility, especially yellow boxes where text is not readable"
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 0
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "Fix defect box visibility toggle functionality"
+    - "Fix defect box text visibility and contrast"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: "Starting work on defect box visibility issues. Need to fix text contrast and hide/show functionality for defect boxes in the interactive frame analysis."
