@@ -16,7 +16,8 @@ from PIL import Image
 import io
 import base64
 import torch
-from transformers import CLIPProcessor, CLIPModel, pipeline
+# Commented out for testing
+# from transformers import CLIPProcessor, CLIPModel, pipeline
 import tempfile
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
