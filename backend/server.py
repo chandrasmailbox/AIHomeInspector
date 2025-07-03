@@ -299,6 +299,57 @@ def draw_defect_boxes(image, defects_with_boxes):
     
     return annotated_image
 
+def detect_defects_with_clip(image, model, processor):
+    """Use CLIP model for defect detection"""
+    try:
+        if not model or not processor:
+            return []
+            
+        # Convert image to PIL format
+        pil_image = Image.fromarray(image)
+        
+        # Define defect categories
+        defect_categories = [
+            "crack in wall",
+            "water damage",
+            "mold on wall",
+            "peeling paint",
+            "rust stains",
+            "damaged tiles",
+            "damaged flooring"
+        ]
+        
+        # Process image and text with CLIP
+        inputs = processor(
+            text=defect_categories,
+            images=[pil_image],
+            return_tensors="pt",
+            padding=True
+        )
+        
+        # Get model outputs
+        outputs = model(**inputs)
+        logits_per_image = outputs.logits_per_image
+        probs = logits_per_image.softmax(dim=1)
+        
+        # Convert probabilities to list
+        confidence_scores = probs[0].tolist()
+        
+        # Create defect results for high confidence detections
+        defect_results = []
+        for category, confidence in zip(defect_categories, confidence_scores):
+            if confidence > 0.5:  # Confidence threshold
+                defect_results.append({
+                    "type": category,
+                    "confidence": confidence
+                })
+        
+        return defect_results
+        
+    except Exception as e:
+        logging.error(f"CLIP detection error: {e}")
+        return []
+
 def analyze_frame(frame_data):
     """Analyze a single frame for defects"""
     frame_number, image_array = frame_data
