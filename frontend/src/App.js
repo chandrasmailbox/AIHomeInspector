@@ -566,7 +566,8 @@ const ResultsDisplay = ({ results, onBack }) => {
                           if (isHidden || !coords) return null;
                           
                           const [x, y, w, h] = Array.isArray(coords) ? coords : [coords.x, coords.y, coords.w, coords.h];
-                          const color = getDefectColor(defect.type);
+                          const strokeColor = getDefectStrokeColor(defect.type);
+                          const bgColor = getTextBackgroundColor(defect.type);
                           
                           return (
                             <g key={boxId}>
@@ -577,10 +578,14 @@ const ResultsDisplay = ({ results, onBack }) => {
                                 width={w}
                                 height={h}
                                 fill="transparent"
-                                stroke={color.replace('bg-', '').replace('-500', '')}
+                                stroke={strokeColor}
                                 strokeWidth="3"
-                                className="hover:stroke-4 cursor-pointer transition-all"
-                                style={{ pointerEvents: 'auto' }}
+                                className="hover:stroke-4 cursor-pointer transition-all defect-box"
+                                style={{ 
+                                  pointerEvents: 'auto',
+                                  opacity: isHidden ? 0.3 : 1,
+                                  strokeDasharray: isHidden ? '10,5' : 'none'
+                                }}
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   toggleBoxVisibility(boxId, defect.type);
@@ -589,11 +594,13 @@ const ResultsDisplay = ({ results, onBack }) => {
                               
                               {/* Delete Button */}
                               <circle
-                                cx={x + w - 8}
-                                cy={y + 8}
-                                r="8"
+                                cx={x + w - 12}
+                                cy={y + 12}
+                                r="10"
                                 fill="rgba(239, 68, 68, 0.9)"
-                                className="hover:fill-red-600 cursor-pointer"
+                                stroke="white"
+                                strokeWidth="2"
+                                className="hover:fill-red-600 cursor-pointer delete-button"
                                 style={{ pointerEvents: 'auto' }}
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -601,12 +608,12 @@ const ResultsDisplay = ({ results, onBack }) => {
                                 }}
                               />
                               <text
-                                x={x + w - 8}
-                                y={y + 8}
+                                x={x + w - 12}
+                                y={y + 12}
                                 textAnchor="middle"
                                 dominantBaseline="central"
                                 fill="white"
-                                fontSize="10"
+                                fontSize="12"
                                 fontWeight="bold"
                                 className="cursor-pointer"
                                 style={{ pointerEvents: 'auto' }}
@@ -618,23 +625,31 @@ const ResultsDisplay = ({ results, onBack }) => {
                                 ×
                               </text>
                               
-                              {/* Label */}
+                              {/* Label with improved visibility */}
                               <rect
                                 x={x}
-                                y={y - 25}
-                                width={Math.min(w, 150)}
-                                height="20"
-                                fill="rgba(0, 0, 0, 0.8)"
-                                rx="2"
+                                y={y - 30}
+                                width={Math.min(w, 200)}
+                                height="25"
+                                fill={bgColor}
+                                stroke="white"
+                                strokeWidth="1"
+                                rx="3"
+                                opacity="0.95"
                               />
                               <text
-                                x={x + 4}
+                                x={x + 6}
                                 y={y - 10}
                                 fill="white"
                                 fontSize="12"
                                 fontWeight="bold"
+                                textShadow="1px 1px 2px rgba(0,0,0,0.8)"
+                                style={{ 
+                                  filter: 'drop-shadow(1px 1px 2px rgba(0,0,0,0.8))',
+                                  fontFamily: 'Arial, sans-serif'
+                                }}
                               >
-                                {defect.type}: {Math.round(defect.confidence * 100)}%
+                                {defect.type.replace('_', ' ')}: {Math.round(defect.confidence * 100)}%
                               </text>
                             </g>
                           );
