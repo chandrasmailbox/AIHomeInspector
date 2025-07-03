@@ -222,8 +222,12 @@ const ResultsDisplay = ({ results, onBack }) => {
         frame_number: selectedFrame.frame_number,
         corrections: corrections
       });
+      
+      console.log(`Box ${boxId} visibility toggled. Now ${newHiddenBoxes.has(boxId) ? 'hidden' : 'visible'}`);
     } catch (error) {
       console.error('Error saving correction:', error);
+      // Revert the local change if saving failed
+      setHiddenBoxes(hiddenBoxes);
     }
   };
 
