@@ -54,14 +54,23 @@ executor = ThreadPoolExecutor(max_workers=2)
 
 # Initialize AI models
 def load_models():
-    global clip_model, clip_processor
+    global clip_model, clip_processor, yolo_model
     try:
         # Commented out for testing
         # clip_model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
         # clip_processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
         clip_model = None
         clip_processor = None
-        logging.info("AI models loading skipped for testing")
+        
+        # Load YOLO model for object detection
+        try:
+            yolo_model = YOLO('yolov8n.pt')
+            logging.info("YOLO model loaded successfully")
+        except Exception as e:
+            logging.warning(f"YOLO model not available: {e}")
+            yolo_model = None
+            
+        logging.info("AI models loading completed")
     except Exception as e:
         logging.error(f"Error loading models: {e}")
 
