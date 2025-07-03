@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Fix defect boxes visibility issues - some boxes not able to hide and text on boxes not visible, specifically yellow box text not visible"
+user_problem_statement: "Add PDF report generation with defect summaries and highlighted images, and integrate multiple ML models for defect detection with model selection, comparison, and ensemble capabilities"
 
 backend:
   - task: "Backend defect detection API"
@@ -117,21 +117,69 @@ backend:
         agent: "main"
         comment: "Backend API is working correctly for defect detection and user corrections"
 
+  - task: "PDF Report Generation API"
+    implemented: false
+    working: false
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "main"
+        comment: "Need to implement PDF report generation with defect summaries, highlighted images, and recommendations"
+
+  - task: "Multiple ML Model Integration"
+    implemented: false
+    working: false
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "main"
+        comment: "Need to integrate multiple ML models (YOLO, SAM, different CLIP versions) for defect detection"
+
+  - task: "Model Selection and Ensemble API"
+    implemented: false
+    working: false
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "main"
+        comment: "Need to implement model selection interface and ensemble prediction capabilities"
+
 frontend:
   - task: "Fix defect box visibility toggle functionality"
     implemented: true
-    working: false
+    working: true
     file: "/app/frontend/src/App.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
-      - working: false
+      - working: true
         agent: "main"
-        comment: "User reports some defect boxes cannot be hidden and text labels not visible, particularly yellow boxes"
+        comment: "Fixed defect box visibility issues and improved text contrast"
 
   - task: "Fix defect box text visibility and contrast"
     implemented: true
+    working: true
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Improved text labels with better contrast and visibility for all defect types including yellow boxes"
+
+  - task: "Model Selection UI"
+    implemented: false
     working: false
     file: "/app/frontend/src/App.js"
     stuck_count: 0
@@ -140,7 +188,31 @@ frontend:
     status_history:
       - working: false
         agent: "main"
-        comment: "Text labels on defect boxes have poor visibility, especially yellow boxes where text is not readable"
+        comment: "Need to implement UI for selecting multiple ML models before analysis"
+
+  - task: "PDF Report Generation UI"
+    implemented: false
+    working: false
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "main"
+        comment: "Need to implement PDF report download functionality with defect summaries"
+
+  - task: "Model Comparison Interface"
+    implemented: false
+    working: false
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "main"
+        comment: "Need to implement UI for comparing results from different ML models"
 
 metadata:
   created_by: "main_agent"
