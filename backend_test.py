@@ -467,6 +467,7 @@ class HomeInspectorAPITester:
         try:
             # Create PDF export request
             pdf_request = {
+                "inspection_id": self.last_inspection_id,
                 "include_images": True,
                 "include_model_comparison": True,
                 "include_recommendations": True
@@ -482,34 +483,41 @@ class HomeInspectorAPITester:
             if response.status_code == 200:
                 print("✅ Successfully received PDF export")
                 
-                # Save PDF to temporary file for validation
-                with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as temp_file:
-                    temp_file.write(response.content)
-                    pdf_path = temp_file.name
-                
-                # Validate PDF content
-                try:
-                    with open(pdf_path, 'rb') as pdf_file:
-                        pdf_reader = PyPDF2.PdfReader(pdf_file)
-                        num_pages = len(pdf_reader.pages)
-                        
-                        print(f"PDF has {num_pages} pages")
-                        
-                        # Check if PDF has content
-                        if num_pages > 0:
-                            print("✅ PDF contains valid content")
-                            self.tests_passed += 1
-                        else:
-                            print("❌ PDF appears to be empty")
+                # Check if the response content is a PDF
+                if response.headers.get('Content-Type') == 'application/pdf' or response.content.startswith(b'%PDF'):
+                    print("✅ Response contains valid PDF data")
+                    
+                    # Save PDF to temporary file for validation
+                    with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as temp_file:
+                        temp_file.write(response.content)
+                        pdf_path = temp_file.name
+                    
+                    # Validate PDF content
+                    try:
+                        with open(pdf_path, 'rb') as pdf_file:
+                            pdf_reader = PyPDF2.PdfReader(pdf_file)
+                            num_pages = len(pdf_reader.pages)
                             
-                    # Clean up temp file
-                    os.unlink(pdf_path)
-                    
-                except Exception as e:
-                    print(f"❌ Error validating PDF: {str(e)}")
+                            print(f"PDF has {num_pages} pages")
+                            
+                            # Check if PDF has content
+                            if num_pages > 0:
+                                print("✅ PDF contains valid content")
+                                self.tests_passed += 1
+                            else:
+                                print("❌ PDF appears to be empty")
+                                
+                        # Clean up temp file
+                        os.unlink(pdf_path)
+                        
+                    except Exception as e:
+                        print(f"❌ Error validating PDF: {str(e)}")
+                        return False
+                        
+                    return True
+                else:
+                    print("❌ Response does not contain valid PDF data")
                     return False
-                    
-                return True
             else:
                 print(f"❌ Failed - Expected 200, got {response.status_code}")
                 print(f"Response: {response.text}")
