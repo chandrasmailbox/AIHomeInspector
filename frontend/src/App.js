@@ -105,6 +105,9 @@ const VideoUpload = ({ onAnalysisComplete }) => {
   };
 
   const handleModelToggle = (modelId) => {
+    const model = availableModels.find(m => m.id === modelId);
+    if (!model || !model.enabled) return; // Don't allow disabled models
+    
     setSelectedModels(prev => {
       if (prev.includes(modelId)) {
         // Don't allow removing all models
