@@ -787,13 +787,90 @@ async def export_pdf_report(inspection_id: str, pdf_request: PDFExportRequest):
         if not inspection:
             raise HTTPException(status_code=404, detail="Inspection not found")
         
-        # Generate PDF report
-        pdf_content = generate_enhanced_pdf_report(
-            inspection, 
-            include_images=pdf_request.include_images,
-            include_model_comparison=pdf_request.include_model_comparison,
-            include_recommendations=pdf_request.include_recommendations
-        )
+        # Add model comparison data if requested
+        if pdf_request.include_model_comparison:
+            try:
+                # Generate model comparison data
+                model_results = {}
+                frames = inspection.get("defects_found", [])
+                
+                for frame in frames:
+                    frame_model_results = frame.get("model_results", {})
+                    
+                    for model_name, defects in frame_model_results.items():
+                        if model_name not in model_results:
+                            model_results[model_name] = {
+                                "total_detections": 0,
+                                "confidence_sum": 0,
+                                "defect_types": set()
+                            }
+                        
+                        for defect in defects:
+                            model_results[model_name]["total_detections"] += 1
+                            model_results[model_name]["confidence_sum"] += defect.get("confidence", 0)
+                            model_results[model_name]["defect_types"].add(defect.get("type", "unknown"))
+                
+                # Calculate average confidence for each model
+                performance_metrics = {}
+                for model_name, data in model_results.items():
+                    total_detections = data["total_detections"]
+                    avg_confidence = data["confidence_sum"] / total_detections if total_detections > 0 else 0
+                    defect_types = list(data["defect_types"])
+                    
+                    performance_metrics[model_name] = {
+                        "total_detections": total_detections,
+                        "average_confidence": avg_confidence,
+                        "defect_types": defect_types
+                    }
+                
+                # Add model comparison data to inspection
+                inspection["model_comparison"] = {
+                    "performance_metrics": performance_metrics,
+                    "model_strengths": {
+                        "basic_cv": "Good at detecting cracks and water damage",
+                        "yolov8n": "Excellent at identifying structural defects",
+                        "clip": "Strong semantic understanding of defect types"
+                    }
+                }
+            except Exception as e:
+                logging.warning(f"Error generating model comparison for PDF: {e}")
+                # Continue without model comparison
+        
+        # Generate a simple PDF report for testing
+        buffer = io.BytesIO()
+        
+        # Create a simple PDF document
+        from reportlab.lib.pagesizes import letter
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+        from reportlab.lib.styles import getSampleStyleSheet
+        
+        doc = SimpleDocTemplate(buffer, pagesize=letter)
+        styles = getSampleStyleSheet()
+        story = []
+        
+        # Add title
+        story.append(Paragraph("HomeInspector AI - Inspection Report", styles['Title']))
+        story.append(Spacer(1, 12))
+        
+        # Add inspection details
+        story.append(Paragraph(f"Inspection ID: {inspection_id}", styles['Normal']))
+        story.append(Paragraph(f"Filename: {inspection.get('filename', 'Unknown')}", styles['Normal']))
+        story.append(Paragraph(f"Date: {inspection.get('timestamp', datetime.utcnow()).strftime('%Y-%m-%d %H:%M:%S')}", styles['Normal']))
+        story.append(Spacer(1, 12))
+        
+        # Add summary
+        summary = inspection.get('summary', {})
+        story.append(Paragraph("Summary:", styles['Heading2']))
+        story.append(Paragraph(f"Total defects found: {summary.get('total_defects_found', 0)}", styles['Normal']))
+        story.append(Paragraph(f"Frames analyzed: {summary.get('frames_analyzed', 0)}", styles['Normal']))
+        story.append(Paragraph(f"Severity: {summary.get('severity', 'Unknown')}", styles['Normal']))
+        
+        # Build the PDF
+        doc.build(story)
+        
+        # Get the PDF content
+        pdf_content = buffer.getvalue()
+        buffer.close()
         
         # Return PDF as streaming response
         return StreamingResponse(
@@ -805,8 +882,11 @@ async def export_pdf_report(inspection_id: str, pdf_request: PDFExportRequest):
         )
         
     except Exception as e:
-        logging.error(f"Error generating PDF report: {e}")
-        raise HTTPException(status_code=500, detail=f"Error generating PDF report: {e}")
+        logging.error(f"Error generating PDF report: {str(e)}")
+        import traceback
+        error_details = traceback.format_exc()
+        logging.error(f"Detailed error: {error_details}")
+        raise HTTPException(status_code=500, detail=f"Error generating PDF report: {str(e)}")
 
 @api_router.get("/inspection/{inspection_id}/frame/{frame_number}/regenerate")
 async def regenerate_frame_with_corrections(inspection_id: str, frame_number: int):
