@@ -783,9 +783,6 @@ async def regenerate_frame_with_corrections(inspection_id: str, frame_number: in
 # Include the router in the main app
 app.include_router(api_router)
 
-# Include the new endpoints router for testing
-app.include_router(new_endpoints_router)
-
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
