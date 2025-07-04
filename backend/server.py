@@ -700,6 +700,29 @@ async def process_video_async(video_bytes, filename):
 async def root():
     return {"message": "HomeInspector AI - Ready for advanced video analysis with multiple AI models"}
 
+@api_router.get("/models/available")
+async def get_available_models():
+    """Get list of all available AI models with their configurations"""
+    available_models_list = []
+    
+    for model_id, config in MODEL_CONFIG.items():
+        model_info = {
+            "id": model_id,
+            "name": config["name"],
+            "enabled": config["enabled"],
+            "confidence_threshold": config["confidence_threshold"],
+            "description": config["description"],
+            "loaded": model_id in models_registry or model_id == 'basic_cv'
+        }
+        available_models_list.append(model_info)
+    
+    return {
+        "available_models": available_models_list,
+        "total_models": len(available_models_list),
+        "enabled_models": [m for m in available_models_list if m["enabled"]],
+        "loaded_models": [m for m in available_models_list if m["loaded"]]
+    }
+
 @api_router.post("/analyze-video", response_model=DefectDetection)
 async def analyze_video(file: UploadFile = File(...)):
     """Analyze uploaded video for defects"""
