@@ -261,8 +261,6 @@ metadata:
 
 test_plan:
   current_focus:
-    - "PDF Report Generation API"
-    - "Multiple ML Model Integration"
     - "Model Selection UI"
     - "PDF Report Generation UI"
     - "Model Comparison Interface"
