@@ -115,7 +115,7 @@ executor = ThreadPoolExecutor(max_workers=2)
 def load_models():
     global clip_model, clip_processor, models_registry
     try:
-        # Commented out for testing
+        # Load CLIP models (disabled for now due to memory constraints)
         # clip_model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
         # clip_processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
         clip_model = None
@@ -133,8 +133,22 @@ def load_models():
                 models_registry['yolov8s'] = YOLO('yolov8s.pt')
                 logging.info("YOLOv8s model loaded successfully")
                 
+            # Load YOLOv8m model if enabled
+            if MODEL_CONFIG['yolov8m']['enabled']:
+                models_registry['yolov8m'] = YOLO('yolov8m.pt')
+                logging.info("YOLOv8m model loaded successfully")
+                
         except Exception as e:
-            logging.warning(f"YOLO models not available: {e}")
+            logging.warning(f"Some YOLO models not available: {e}")
+        
+        # Load SAM model if available
+        if SAM_AVAILABLE and MODEL_CONFIG['sam']['enabled']:
+            try:
+                # Note: SAM requires specific model checkpoint files
+                logging.info("SAM model available but not loaded (requires checkpoint file)")
+            except Exception as e:
+                logging.warning(f"SAM model loading failed: {e}")
+                MODEL_CONFIG['sam']['enabled'] = False
             
         logging.info("AI models loading completed")
     except Exception as e:
