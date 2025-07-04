@@ -1,5 +1,5 @@
 from fastapi import FastAPI, APIRouter, UploadFile, File, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -7,7 +7,7 @@ import os
 import logging
 from pathlib import Path
 from pydantic import BaseModel, Field
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import uuid
 from datetime import datetime
 import cv2
@@ -16,8 +16,7 @@ from PIL import Image, ImageDraw, ImageFont
 import io
 import base64
 import torch
-# Commented out for testing
-# from transformers import CLIPProcessor, CLIPModel, pipeline
+from transformers import CLIPProcessor, CLIPModel, pipeline
 import tempfile
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
@@ -30,6 +29,17 @@ from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
 import ultralytics
 from ultralytics import YOLO
 from datetime import datetime
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+from sklearn.cluster import DBSCAN
+from sklearn.preprocessing import StandardScaler
+import supervision as sv
+try:
+    from segment_anything import SamPredictor, sam_model_registry
+    SAM_AVAILABLE = True
+except ImportError:
+    SAM_AVAILABLE = False
+    logging.warning("SAM not available - some features will be disabled")
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
