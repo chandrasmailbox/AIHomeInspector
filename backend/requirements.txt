@@ -12,7 +12,7 @@ torchvision==0.16.1
 transformers==4.35.2
 ultralytics==8.0.206
 reportlab==4.0.7
-aiofiles==0.24.0
+aiofiles==24.1.0
 segment-anything==1.0
 timm==0.9.12
 matplotlib==3.7.2
