@@ -225,12 +225,14 @@ def detect_water_damage(image):
     
     return has_damage, confidence, damage_boxes
 
-def detect_defects_with_yolo(image):
+def detect_defects_with_yolo(image, model_name='yolov8n'):
     """Use YOLO model for object detection"""
     try:
-        if yolo_model is None:
+        if model_name not in models_registry or not MODEL_CONFIG[model_name]['enabled']:
             return []
             
+        yolo_model = models_registry[model_name]
+        
         # Run YOLO detection
         results = yolo_model(image)
         detections = []
@@ -251,17 +253,19 @@ def detect_defects_with_yolo(image):
                     # Map to defect types based on detected objects
                     defect_type = map_yolo_to_defect(detected_object)
                     
-                    if defect_type and confidence > 0.3:
-                        box_id = f"yolo_{defect_type}_{i}_{uuid.uuid4().hex[:8]}"
+                    threshold = MODEL_CONFIG[model_name]['confidence_threshold']
+                    if defect_type and confidence > threshold:
+                        box_id = f"{model_name}_{defect_type}_{i}_{uuid.uuid4().hex[:8]}"
                         detections.append({
                             "type": defect_type,
                             "confidence": confidence,
-                            "description": f"{defect_type} detected by YOLO with {confidence:.2f} confidence",
+                            "description": f"{defect_type} detected by {MODEL_CONFIG[model_name]['name']} with {confidence:.2f} confidence",
                             "boxes": [{
                                 "id": box_id,
                                 "coords": [int(x1), int(y1), int(x2-x1), int(y2-y1)],
                                 "visible": True
-                            }]
+                            }],
+                            "model": model_name
                         })
         
         return detections
