@@ -567,9 +567,8 @@ def main():
             print("❌ Root API test failed, stopping tests")
             return 1
         
-        # Skip the new endpoint tests for now
-        print("\n⚠️ Skipping new endpoint tests (models/available, analyze-video-with-models, export-pdf, model-comparison)")
-        print("⚠️ These endpoints are implemented in the server.py file but require additional configuration")
+        # Test the new endpoints
+        print("\n🔍 Testing new endpoints (analyze-video-with-models, export-pdf, model-comparison)")
             
         # Create test video
         if not tester.create_test_video():
