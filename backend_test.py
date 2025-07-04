@@ -12,6 +12,7 @@ import cv2
 import numpy as np
 from PIL import Image
 import io
+import PyPDF2
 
 class HomeInspectorAPITester:
     def __init__(self, base_url="https://f9e22b5f-b6e7-48d4-b08f-ec20119bde78.preview.emergentagent.com"):
