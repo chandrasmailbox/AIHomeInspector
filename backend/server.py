@@ -39,6 +39,12 @@ import supervision as sv
 # Model Registry and Configuration
 models_registry = {}
 MODEL_CONFIG = {
+    'basic_cv': {
+        'name': 'Basic Computer Vision',
+        'enabled': True,
+        'confidence_threshold': 0.3,
+        'description': 'OpenCV-based crack and water damage detection'
+    },
     'yolov8n': {
         'name': 'YOLOv8 Nano',
         'enabled': True,
@@ -47,9 +53,33 @@ MODEL_CONFIG = {
     },
     'yolov8s': {
         'name': 'YOLOv8 Small',
-        'enabled': False,
+        'enabled': True,
         'confidence_threshold': 0.4,
         'description': 'Small object detection model with better accuracy'
+    },
+    'yolov8m': {
+        'name': 'YOLOv8 Medium',
+        'enabled': True,
+        'confidence_threshold': 0.4,
+        'description': 'Medium-sized object detection model with balanced accuracy'
+    },
+    'clip_vit_b32': {
+        'name': 'CLIP ViT-B/32',
+        'enabled': False,  # Disabled for now due to memory constraints
+        'confidence_threshold': 0.5,
+        'description': 'Visual-language model for semantic defect understanding'
+    },
+    'clip_vit_l14': {
+        'name': 'CLIP ViT-L/14',
+        'enabled': False,  # Disabled for now due to memory constraints
+        'confidence_threshold': 0.5,
+        'description': 'Large visual-language model for advanced defect classification'
+    },
+    'sam': {
+        'name': 'Segment Anything Model',
+        'enabled': False,  # Will be enabled if SAM is available
+        'confidence_threshold': 0.6,
+        'description': 'Advanced segmentation model for precise defect boundaries'
     }
 }
 try:
