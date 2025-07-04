@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, UploadFile, File, HTTPException
+from fastapi import FastAPI, APIRouter, UploadFile, File, HTTPException, Form
 from fastapi.responses import JSONResponse, StreamingResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -16,6 +16,7 @@ from PIL import Image, ImageDraw, ImageFont
 import io
 import base64
 import torch
+import json
 from transformers import CLIPProcessor, CLIPModel, pipeline
 import tempfile
 import asyncio
