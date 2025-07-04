@@ -9,7 +9,31 @@ const VideoUpload = ({ onAnalysisComplete }) => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+  const [availableModels, setAvailableModels] = useState([]);
+  const [selectedModels, setSelectedModels] = useState(['basic_cv']);
+  const [showModelSelection, setShowModelSelection] = useState(false);
+  const [ensembleMethod, setEnsembleMethod] = useState('weighted_average');
+  const [confidenceThreshold, setConfidenceThreshold] = useState(0.5);
   const fileInputRef = useRef(null);
+
+  // Fetch available models on component mount
+  useEffect(() => {
+    fetchAvailableModels();
+  }, []);
+
+  const fetchAvailableModels = async () => {
+    try {
+      const response = await axios.get(`${API}/models/available`);
+      setAvailableModels(response.data.available_models || []);
+    } catch (error) {
+      console.error('Failed to fetch available models:', error);
+      // Fallback to basic models if API fails
+      setAvailableModels([
+        { id: 'basic_cv', name: 'Basic Computer Vision', description: 'Traditional CV methods', enabled: true },
+        { id: 'yolov8n', name: 'YOLOv8 Nano', description: 'Fast object detection', enabled: true }
+      ]);
+    }
+  };
 
   const handleDrag = (e) => {
     e.preventDefault();
