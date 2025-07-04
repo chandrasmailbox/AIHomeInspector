@@ -36,9 +36,6 @@ from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import StandardScaler
 import supervision as sv
 
-# Import new endpoints for testing
-from new_endpoints import router as new_endpoints_router
-
 # Model Registry and Configuration
 models_registry = {}
 MODEL_CONFIG = {
