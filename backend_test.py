@@ -605,8 +605,6 @@ def main():
         
         # Print results
         print(f"\n📊 Tests passed: {tester.tests_passed}/{tester.tests_run}")
-        print(f"\n⚠️ Note: New endpoints (models/available, analyze-video-with-models, export-pdf, model-comparison) were not tested")
-        print("⚠️ These endpoints are implemented in the server.py file but require additional configuration")
         
         return 0 if tester.tests_passed == tester.tests_run else 1
         
