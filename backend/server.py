@@ -656,7 +656,7 @@ async def process_video_with_models_async(video_bytes, filename, selected_models
     for i in range(0, len(frames), batch_size):
         batch = frames[i:i+batch_size]
         tasks = [
-            loop.run_in_executor(executor, analyze_frame_with_models, (frame_data, selected_models))
+            loop.run_in_executor(executor, analyze_frame_with_models, frame_data, selected_models)
             for frame_data in batch
         ]
         batch_results = await asyncio.gather(*tasks)
