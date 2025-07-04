@@ -369,6 +369,193 @@ class HomeInspectorAPITester:
         except Exception as e:
             print(f"❌ Error testing frame regeneration: {str(e)}")
             return False
+            
+    def test_available_models(self):
+        """Test the available models endpoint"""
+        print(f"\n🔍 Testing Available Models API...")
+        self.tests_run += 1
+        
+        try:
+            success, response = self.run_test(
+                "Get Available Models",
+                "GET",
+                "models/available",
+                200
+            )
+            
+            if success:
+                print("✅ Successfully retrieved available models")
+                if 'models' in response:
+                    print(f"Available models: {', '.join(response['models'])}")
+                    self.tests_passed += 1
+                else:
+                    print("❌ Response missing 'models' field")
+                    
+            return success
+            
+        except Exception as e:
+            print(f"❌ Error testing available models API: {str(e)}")
+            return False
+            
+    def test_analyze_video_with_models(self):
+        """Test video analysis with multiple model selection"""
+        if not self.test_video_path or not os.path.exists(self.test_video_path):
+            print("❌ No test video available")
+            return False
+            
+        print(f"\n🔍 Testing Video Analysis with Multiple Models API...")
+        self.tests_run += 1
+        
+        try:
+            with open(self.test_video_path, 'rb') as video_file:
+                # Create model selection data
+                model_selection = {
+                    "selected_models": ["basic_cv", "yolov8n"],
+                    "ensemble_method": "weighted_average",
+                    "confidence_threshold": 0.4,
+                    "use_ensemble": True
+                }
+                
+                # Create multipart form data
+                files = {
+                    'file': ('test_video.mp4', video_file, 'video/mp4'),
+                    'model_selection': (None, json.dumps(model_selection), 'application/json')
+                }
+                
+                print("Uploading video for analysis with multiple models (this may take some time)...")
+                success, response = self.run_test(
+                    "Video Analysis with Multiple Models",
+                    "POST",
+                    "analyze-video-with-models",
+                    200,
+                    files=files
+                )
+                
+                if success:
+                    print("✅ Video analysis with multiple models completed successfully")
+                    print(f"Defects found: {response.get('summary', {}).get('total_defects_found', 0)}")
+                    print(f"Selected models: {', '.join(response.get('selected_models', []))}")
+                    
+                    # Store the inspection ID for later use
+                    self.last_inspection_id = response.get('id')
+                    
+                    # Check if model results are included
+                    if 'model_results' in response:
+                        print("✅ Response includes model-specific results")
+                        self.tests_passed += 1
+                    else:
+                        print("❌ Response missing model-specific results")
+                        
+                return success
+                
+        except Exception as e:
+            print(f"❌ Error testing video analysis with multiple models: {str(e)}")
+            return False
+            
+    def test_export_pdf(self):
+        """Test PDF export functionality"""
+        if not hasattr(self, 'last_inspection_id') or not self.last_inspection_id:
+            print("❌ No inspection ID available for PDF export test")
+            return False
+            
+        print(f"\n🔍 Testing PDF Export API...")
+        self.tests_run += 1
+        
+        try:
+            # Create PDF export request
+            pdf_request = {
+                "include_images": True,
+                "include_model_comparison": True,
+                "include_recommendations": True
+            }
+            
+            # Request PDF export
+            url = f"{self.api_url}/inspection/{self.last_inspection_id}/export-pdf"
+            headers = {'Content-Type': 'application/json'}
+            
+            print(f"Requesting PDF export for inspection {self.last_inspection_id}...")
+            response = requests.post(url, data=json.dumps(pdf_request), headers=headers)
+            
+            if response.status_code == 200:
+                print("✅ Successfully received PDF export")
+                
+                # Save PDF to temporary file for validation
+                with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as temp_file:
+                    temp_file.write(response.content)
+                    pdf_path = temp_file.name
+                
+                # Validate PDF content
+                try:
+                    with open(pdf_path, 'rb') as pdf_file:
+                        pdf_reader = PyPDF2.PdfReader(pdf_file)
+                        num_pages = len(pdf_reader.pages)
+                        
+                        print(f"PDF has {num_pages} pages")
+                        
+                        # Check if PDF has content
+                        if num_pages > 0:
+                            print("✅ PDF contains valid content")
+                            self.tests_passed += 1
+                        else:
+                            print("❌ PDF appears to be empty")
+                            
+                    # Clean up temp file
+                    os.unlink(pdf_path)
+                    
+                except Exception as e:
+                    print(f"❌ Error validating PDF: {str(e)}")
+                    return False
+                    
+                return True
+            else:
+                print(f"❌ Failed - Expected 200, got {response.status_code}")
+                print(f"Response: {response.text}")
+                return False
+                
+        except Exception as e:
+            print(f"❌ Error testing PDF export: {str(e)}")
+            return False
+            
+    def test_model_comparison(self):
+        """Test model comparison endpoint"""
+        if not hasattr(self, 'last_inspection_id') or not self.last_inspection_id:
+            print("❌ No inspection ID available for model comparison test")
+            return False
+            
+        print(f"\n🔍 Testing Model Comparison API...")
+        self.tests_run += 1
+        
+        try:
+            success, response = self.run_test(
+                "Get Model Comparison",
+                "GET",
+                f"inspection/{self.last_inspection_id}/model-comparison",
+                200
+            )
+            
+            if success:
+                print("✅ Successfully retrieved model comparison data")
+                
+                # Check if the response contains the expected data
+                if 'performance_metrics' in response:
+                    print("✅ Response includes performance metrics")
+                    
+                    # Print some metrics for verification
+                    metrics = response.get('performance_metrics', {})
+                    for model, data in metrics.items():
+                        print(f"Model: {model}")
+                        print(f"  - Detections: {data.get('total_detections', 0)}")
+                        print(f"  - Avg Confidence: {data.get('average_confidence', 0):.2f}")
+                        
+                    self.tests_passed += 1
+                else:
+                    print("❌ Response missing performance metrics")
+                    
+            return success
+            
+        except Exception as e:
+            print(f"❌ Error testing model comparison API: {str(e)}")
+            return False
 
 def main():
     # Setup
