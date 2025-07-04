@@ -74,17 +74,57 @@ const VideoUpload = ({ onAnalysisComplete }) => {
     formData.append('file', selectedFile);
 
     try {
-      const response = await axios.post(`${API}/analyze-video`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      let response;
+      if (selectedModels.length > 1 || selectedModels[0] !== 'basic_cv') {
+        // Use enhanced analysis with model selection
+        response = await axios.post(`${API}/analyze-video-with-models`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+          params: {
+            selected_models: selectedModels.join(','),
+            ensemble_method: ensembleMethod,
+            confidence_threshold: confidenceThreshold
+          }
+        });
+      } else {
+        // Use basic analysis for backward compatibility
+        response = await axios.post(`${API}/analyze-video`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+      }
       onAnalysisComplete(response.data);
     } catch (error) {
       console.error('Analysis failed:', error);
       alert('Analysis failed. Please try again.');
     } finally {
       setIsAnalyzing(false);
+    }
+  };
+
+  const handleModelToggle = (modelId) => {
+    setSelectedModels(prev => {
+      if (prev.includes(modelId)) {
+        // Don't allow removing all models
+        if (prev.length > 1) {
+          return prev.filter(id => id !== modelId);
+        }
+        return prev;
+      } else {
+        return [...prev, modelId];
+      }
+    });
+  };
+
+  const getModelTypeColor = (type) => {
+    switch (type) {
+      case 'computer_vision': return 'bg-green-100 text-green-800';
+      case 'deep_learning': return 'bg-blue-100 text-blue-800';
+      case 'multimodal': return 'bg-purple-100 text-purple-800';
+      case 'segmentation': return 'bg-orange-100 text-orange-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
