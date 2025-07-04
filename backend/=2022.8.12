@@ -1,0 +1,17 @@
+Looking in indexes: https://pypi.org/simple, https://d33sy5i8bnduwe.cloudfront.net/simple/
+Collecting imageio
+  Downloading imageio-2.37.0-py3-none-any.whl.metadata (5.2 kB)
+Collecting lazy-loader
+  Downloading lazy_loader-0.4-py3-none-any.whl.metadata (7.6 kB)
+Collecting tifffile
+  Downloading tifffile-2025.6.11-py3-none-any.whl.metadata (32 kB)
+Requirement already satisfied: numpy in /root/.venv/lib/python3.11/site-packages (from imageio) (1.24.3)
+Requirement already satisfied: pillow>=8.3.2 in /root/.venv/lib/python3.11/site-packages (from imageio) (10.1.0)
+Requirement already satisfied: packaging in /root/.venv/lib/python3.11/site-packages (from lazy-loader) (25.0)
+Downloading imageio-2.37.0-py3-none-any.whl (315 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 315.8/315.8 kB 10.8 MB/s eta 0:00:00
+Downloading lazy_loader-0.4-py3-none-any.whl (12 kB)
+Downloading tifffile-2025.6.11-py3-none-any.whl (230 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 230.8/230.8 kB 34.1 MB/s eta 0:00:00
+Installing collected packages: tifffile, lazy-loader, imageio
+Successfully installed imageio-2.37.0 lazy-loader-0.4 tifffile-2025.6.11
