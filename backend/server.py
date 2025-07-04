@@ -346,12 +346,16 @@ def draw_defect_boxes(image, defects_with_boxes):
     
     return annotated_image
 
-def detect_defects_with_clip(image, model, processor):
+def detect_defects_with_clip(image, model_name='clip_vit_b32'):
     """Use CLIP model for defect detection"""
     try:
-        if not model or not processor:
+        if model_name not in models_registry or not MODEL_CONFIG[model_name]['enabled']:
             return []
             
+        clip_data = models_registry[model_name]
+        model = clip_data['model']
+        processor = clip_data['processor']
+        
         # Convert image to PIL format
         pil_image = Image.fromarray(image)
         
@@ -363,7 +367,10 @@ def detect_defects_with_clip(image, model, processor):
             "peeling paint",
             "rust stains",
             "damaged tiles",
-            "damaged flooring"
+            "damaged flooring",
+            "structural damage",
+            "ceiling damage",
+            "window damage"
         ]
         
         # Process image and text with CLIP
@@ -384,11 +391,25 @@ def detect_defects_with_clip(image, model, processor):
         
         # Create defect results for high confidence detections
         defect_results = []
+        threshold = MODEL_CONFIG[model_name]['confidence_threshold']
+        
         for category, confidence in zip(defect_categories, confidence_scores):
-            if confidence > 0.5:  # Confidence threshold
+            if confidence > threshold:
+                h, w = image.shape[:2]
+                # Create a general bounding box for CLIP detections
+                general_box = (w//4, h//4, w//2, h//2)
+                box_id = f"{model_name}_{category.replace(' ', '_')}_{uuid.uuid4().hex[:8]}"
+                
                 defect_results.append({
                     "type": category,
-                    "confidence": confidence
+                    "confidence": confidence,
+                    "description": f"{category} detected by {MODEL_CONFIG[model_name]['name']} with {confidence:.2f} confidence",
+                    "boxes": [{
+                        "id": box_id,
+                        "coords": general_box,
+                        "visible": True
+                    }],
+                    "model": model_name
                 })
         
         return defect_results
