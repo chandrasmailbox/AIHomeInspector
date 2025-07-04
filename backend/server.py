@@ -34,6 +34,23 @@ import matplotlib.patches as patches
 from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import StandardScaler
 import supervision as sv
+
+# Model Registry and Configuration
+models_registry = {}
+MODEL_CONFIG = {
+    'yolov8n': {
+        'name': 'YOLOv8 Nano',
+        'enabled': True,
+        'confidence_threshold': 0.3,
+        'description': 'Lightweight object detection model'
+    },
+    'yolov8s': {
+        'name': 'YOLOv8 Small',
+        'enabled': False,
+        'confidence_threshold': 0.4,
+        'description': 'Small object detection model with better accuracy'
+    }
+}
 try:
     from segment_anything import SamPredictor, sam_model_registry
     SAM_AVAILABLE = True
