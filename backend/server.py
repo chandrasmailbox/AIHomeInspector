@@ -638,8 +638,8 @@ def extract_frames_from_video(video_bytes):
         logging.error(f"Video processing error: {e}")
         raise HTTPException(status_code=400, detail=f"Error processing video: {e}")
 
-async def process_video_async(video_bytes, filename):
-    """Process video asynchronously"""
+async def process_video_with_models_async(video_bytes, filename, selected_models=['basic_cv'], ensemble_method='weighted_average', confidence_threshold=0.5):
+    """Process video asynchronously with selected AI models"""
     # Extract frames
     frames, total_frames = extract_frames_from_video(video_bytes)
     
@@ -656,7 +656,7 @@ async def process_video_async(video_bytes, filename):
     for i in range(0, len(frames), batch_size):
         batch = frames[i:i+batch_size]
         tasks = [
-            loop.run_in_executor(executor, analyze_frame, frame_data)
+            loop.run_in_executor(executor, analyze_frame_with_models, (frame_data, selected_models))
             for frame_data in batch
         ]
         batch_results = await asyncio.gather(*tasks)
@@ -666,20 +666,40 @@ async def process_video_async(video_bytes, filename):
     all_defects = []
     defect_types = set()
     high_confidence_frames = 0
+    model_results = {model: {"detections": 0, "confidence_sum": 0.0} for model in selected_models}
     
     for result in all_results:
-        all_defects.extend(result["defects"])
-        for defect in result["defects"]:
+        frame_defects = result["defects"]
+        all_defects.extend(frame_defects)
+        
+        # Track model-specific metrics
+        for defect in frame_defects:
             defect_types.add(defect["type"])
-        if result["confidence_score"] > 0.7:
+            model = defect.get("model", "basic_cv")
+            if model in model_results:
+                model_results[model]["detections"] += 1
+                model_results[model]["confidence_sum"] += defect["confidence"]
+        
+        if result["confidence_score"] > confidence_threshold:
             high_confidence_frames += 1
+    
+    # Calculate model performance metrics
+    model_performance = {}
+    for model, metrics in model_results.items():
+        if metrics["detections"] > 0:
+            avg_confidence = metrics["confidence_sum"] / metrics["detections"]
+            model_performance[model] = {
+                "total_detections": metrics["detections"],
+                "average_confidence": avg_confidence
+            }
     
     summary = {
         "total_defects_found": len(all_defects),
         "defect_types": list(defect_types),
         "frames_analyzed": len(frames),
         "high_confidence_detections": high_confidence_frames,
-        "severity": "high" if high_confidence_frames > len(frames) * 0.3 else "medium" if high_confidence_frames > 0 else "low"
+        "severity": "high" if high_confidence_frames > len(frames) * 0.3 else "medium" if high_confidence_frames > 0 else "low",
+        "model_performance": model_performance
     }
     
     # Create detection record
@@ -687,13 +707,19 @@ async def process_video_async(video_bytes, filename):
         filename=filename,
         total_frames=total_frames,
         defects_found=all_results,
-        summary=summary
+        summary=summary,
+        selected_models=selected_models,
+        model_results=model_performance
     )
     
     # Save to database
     await db.inspections.insert_one(detection.dict())
     
     return detection
+
+async def process_video_async(video_bytes, filename):
+    """Legacy process video function that uses default settings"""
+    return await process_video_with_models_async(video_bytes, filename)
 
 # API Routes
 @api_router.get("/")
