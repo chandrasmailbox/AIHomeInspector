@@ -171,11 +171,14 @@ backend:
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "New analyze-video-with-models endpoint supporting multiple model selection and ensemble methods"
+      - working: true
+        agent: "testing"
+        comment: "Tested enhanced video analysis with model selection. The system successfully analyzes videos with selected models."
 
 frontend:
   - task: "Fix defect box visibility toggle functionality"
