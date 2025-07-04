@@ -537,33 +537,37 @@ class HomeInspectorAPITester:
         self.tests_run += 1
         
         try:
-            success, response = self.run_test(
-                "Get Model Comparison",
-                "GET",
-                f"inspection/{self.last_inspection_id}/model-comparison",
-                200
-            )
+            # Request model comparison data
+            url = f"{self.api_url}/inspection/{self.last_inspection_id}/model-comparison"
             
-            if success:
+            print(f"Requesting model comparison for inspection {self.last_inspection_id}...")
+            response = requests.get(url)
+            
+            if response.status_code == 200:
                 print("✅ Successfully retrieved model comparison data")
+                result = response.json()
                 
                 # Check if the response contains the expected data
-                if 'performance_metrics' in response:
+                if 'performance_metrics' in result:
                     print("✅ Response includes performance metrics")
                     
                     # Print some metrics for verification
-                    metrics = response.get('performance_metrics', {})
+                    metrics = result.get('performance_metrics', {})
                     for model, data in metrics.items():
                         print(f"Model: {model}")
                         print(f"  - Detections: {data.get('total_detections', 0)}")
                         print(f"  - Avg Confidence: {data.get('average_confidence', 0):.2f}")
                         
                     self.tests_passed += 1
+                    return True
                 else:
                     print("❌ Response missing performance metrics")
-                    
-            return success
-            
+                    return False
+            else:
+                print(f"❌ Failed - Expected 200, got {response.status_code}")
+                print(f"Response: {response.text}")
+                return False
+                
         except Exception as e:
             print(f"❌ Error testing model comparison API: {str(e)}")
             return False
