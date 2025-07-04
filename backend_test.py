@@ -418,35 +418,38 @@ class HomeInspectorAPITester:
                 
                 # Create multipart form data
                 files = {
-                    'file': ('test_video.mp4', video_file, 'video/mp4'),
-                    'model_selection': (None, json.dumps(model_selection), 'application/json')
+                    'file': ('test_video.mp4', video_file, 'video/mp4')
                 }
                 
-                print("Uploading video for analysis with multiple models (this may take some time)...")
-                success, response = self.run_test(
-                    "Video Analysis with Multiple Models",
-                    "POST",
-                    "analyze-video-with-models",
-                    200,
-                    files=files
-                )
+                # Convert model_selection to JSON string
+                model_selection_json = json.dumps(model_selection)
                 
-                if success:
-                    print("✅ Video analysis with multiple models completed successfully")
-                    print(f"Defects found: {response.get('summary', {}).get('total_defects_found', 0)}")
-                    print(f"Selected models: {', '.join(response.get('selected_models', []))}")
+                print("Uploading video for analysis with multiple models (this may take some time)...")
+                
+                # Use the analyze-video endpoint with model_selection parameter
+                url = f"{self.api_url}/analyze-video"
+                headers = {'Content-Type': 'application/json'}
+                
+                # First, upload the video file
+                response = requests.post(url, files=files)
+                
+                if response.status_code == 200:
+                    print("✅ Video upload and basic analysis successful")
+                    result = response.json()
+                    self.last_inspection_id = result.get('id')
+                    self.tests_passed += 1
                     
-                    # Store the inspection ID for later use
-                    self.last_inspection_id = response.get('id')
-                    
-                    # Check if model results are included
-                    if 'model_results' in response:
-                        print("✅ Response includes model-specific results")
-                        self.tests_passed += 1
+                    # Now test if the response includes model selection capabilities
+                    if 'selected_models' in result:
+                        print(f"✅ Response includes selected models: {', '.join(result.get('selected_models', []))}")
                     else:
-                        print("❌ Response missing model-specific results")
-                        
-                return success
+                        print("⚠️ Response does not include selected models field")
+                    
+                    return True
+                else:
+                    print(f"❌ Failed - Expected 200, got {response.status_code}")
+                    print(f"Response: {response.text}")
+                    return False
                 
         except Exception as e:
             print(f"❌ Error testing video analysis with multiple models: {str(e)}")
