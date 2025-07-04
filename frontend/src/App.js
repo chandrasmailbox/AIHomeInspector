@@ -612,6 +612,85 @@ const ResultsDisplay = ({ results, onBack }) => {
       {/* Color Legend */}
       <DefectLegend />
 
+      {/* Model Performance Section */}
+      {results.selected_models && results.selected_models.length > 1 && (
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-semibold">AI Model Performance</h3>
+            <button
+              onClick={() => {
+                setShowModelComparison(!showModelComparison);
+                if (!showModelComparison && !modelComparison) {
+                  fetchModelComparison();
+                }
+              }}
+              className="text-blue-600 hover:text-blue-700 font-medium"
+            >
+              {showModelComparison ? 'Hide Details' : 'Show Details'}
+            </button>
+          </div>
+          
+          <div className="flex flex-wrap gap-2 mb-4">
+            {results.selected_models.map((model, index) => (
+              <span key={index} className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                {model}
+              </span>
+            ))}
+          </div>
+
+          {showModelComparison && modelComparison && (
+            <div className="space-y-4">
+              {modelComparison.performance_metrics && Object.keys(modelComparison.performance_metrics).length > 0 && (
+                <div>
+                  <h4 className="font-medium text-gray-700 mb-3">Performance Metrics</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {Object.entries(modelComparison.performance_metrics).map(([modelName, metrics]) => (
+                      <div key={modelName} className="border rounded-lg p-4 bg-gray-50">
+                        <h5 className="font-medium text-gray-800 mb-2">{modelName}</h5>
+                        <div className="space-y-1 text-sm">
+                          <div className="flex justify-between">
+                            <span>Detections:</span>
+                            <span className="font-medium">{metrics.total_detections}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Avg Confidence:</span>
+                            <span className="font-medium">{(metrics.average_confidence * 100).toFixed(1)}%</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Defect Types:</span>
+                            <span className="font-medium">{metrics.defect_types?.length || 0}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {modelComparison.model_strengths && (
+                <div>
+                  <h4 className="font-medium text-gray-700 mb-3">Model Strengths</h4>
+                  <div className="space-y-2">
+                    {Object.entries(modelComparison.model_strengths).map(([modelName, strengths]) => (
+                      <div key={modelName} className="flex items-start space-x-3">
+                        <span className="font-medium text-gray-700 min-w-0 flex-shrink-0">{modelName}:</span>
+                        <div className="flex flex-wrap gap-1">
+                          {strengths.map((strength, index) => (
+                            <span key={index} className="inline-block px-2 py-1 bg-green-100 text-green-800 text-xs rounded">
+                              {strength}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Summary Card */}
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
         <h3 className="text-xl font-semibold mb-4">Inspection Summary</h3>
