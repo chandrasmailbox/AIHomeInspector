@@ -652,7 +652,7 @@ async def process_video_async(video_bytes, filename):
 # API Routes
 @api_router.get("/")
 async def root():
-    return {"message": "HomeInspector AI - Ready for video analysis"}
+    return {"message": "HomeInspector AI - Ready for advanced video analysis with multiple AI models"}
 
 @api_router.post("/analyze-video", response_model=DefectDetection)
 async def analyze_video(file: UploadFile = File(...)):
