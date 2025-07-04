@@ -96,6 +96,7 @@ class ModelSelection(BaseModel):
     selected_models: List[str] = Field(default=['basic_cv'])
     ensemble_method: str = Field(default='weighted_average')
     confidence_threshold: float = Field(default=0.5)
+    use_ensemble: bool = Field(default=False)
 
 class InspectionRequest(BaseModel):
     model_selection: ModelSelection = Field(default_factory=ModelSelection)
@@ -110,6 +111,8 @@ class DefectDetection(BaseModel):
     user_corrections: Dict[str, List[UserCorrection]] = Field(default_factory=dict)
     model_results: Dict[str, Any] = Field(default_factory=dict)  # Store results from different models
     selected_models: List[str] = Field(default=['basic_cv'])
+    ensemble_results: Optional[Dict[str, Any]] = Field(default=None)
+    model_comparison: Optional[Dict[str, Any]] = Field(default=None)
 
 class DefectFrame(BaseModel):
     frame_number: int
@@ -122,6 +125,12 @@ class FrameCorrection(BaseModel):
     inspection_id: str
     frame_number: int
     corrections: List[UserCorrection]
+
+class PDFExportRequest(BaseModel):
+    inspection_id: str
+    include_images: bool = Field(default=True)
+    include_model_comparison: bool = Field(default=True)
+    include_recommendations: bool = Field(default=True)
 
 # AI Detection Functions
 def detect_cracks_opencv(image):
