@@ -594,6 +594,14 @@ def main():
             if hasattr(tester, 'test_frame_number') and hasattr(tester, 'test_box_id'):
                 if not tester.test_save_corrections():
                     print("❌ Save corrections test failed")
+                    
+            # Test PDF export
+            if not tester.test_export_pdf():
+                print("❌ PDF export test failed")
+                
+            # Test model comparison
+            if not tester.test_model_comparison():
+                print("❌ Model comparison test failed")
         
         # Print results
         print(f"\n📊 Tests passed: {tester.tests_passed}/{tester.tests_run}")
