@@ -566,6 +566,11 @@ def main():
         if not tester.test_root_endpoint():
             print("❌ Root API test failed, stopping tests")
             return 1
+        
+        # Test available models endpoint
+        if not tester.test_available_models():
+            print("❌ Available models test failed")
+            # Continue with other tests
             
         # Create test video
         if not tester.create_test_video():
@@ -575,6 +580,11 @@ def main():
         # Test video analysis with bounding box feature
         if not tester.test_analyze_video():
             print("❌ Video analysis test failed")
+            # Continue with other tests
+            
+        # Test video analysis with multiple models
+        if not tester.test_analyze_video_with_models():
+            print("❌ Video analysis with multiple models test failed")
             # Continue with other tests
             
         # Test getting all inspections
@@ -591,6 +601,14 @@ def main():
             if hasattr(tester, 'test_frame_number') and hasattr(tester, 'test_box_id'):
                 if not tester.test_save_corrections():
                     print("❌ Save corrections test failed")
+            
+            # Test PDF export
+            if not tester.test_export_pdf():
+                print("❌ PDF export test failed")
+                
+            # Test model comparison
+            if not tester.test_model_comparison():
+                print("❌ Model comparison test failed")
         
         # Print results
         print(f"\n📊 Tests passed: {tester.tests_passed}/{tester.tests_run}")
