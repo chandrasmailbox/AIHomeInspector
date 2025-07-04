@@ -85,6 +85,7 @@ MODEL_CONFIG = {
 try:
     from segment_anything import SamPredictor, sam_model_registry
     SAM_AVAILABLE = True
+    MODEL_CONFIG['sam']['enabled'] = True
 except ImportError:
     SAM_AVAILABLE = False
     logging.warning("SAM not available - some features will be disabled")
