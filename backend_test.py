@@ -575,9 +575,9 @@ def main():
             print("❌ Failed to create test video, stopping tests")
             return 1
             
-        # Test video analysis with bounding box feature
-        if not tester.test_analyze_video():
-            print("❌ Video analysis test failed")
+        # Test video analysis with multiple models
+        if not tester.test_analyze_video_with_models():
+            print("❌ Video analysis with multiple models test failed")
             # Continue with other tests
             
         # Test getting all inspections
