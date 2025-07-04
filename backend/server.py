@@ -719,6 +719,95 @@ async def save_user_corrections(inspection_id: str, frame_correction: FrameCorre
         logging.error(f"Error saving corrections: {e}")
         raise HTTPException(status_code=500, detail=f"Error saving corrections: {e}")
 
+@api_router.get("/inspection/{inspection_id}/model-comparison")
+async def get_model_comparison(inspection_id: str):
+    """Get model comparison data for a specific inspection"""
+    try:
+        # Find the inspection
+        inspection = await db.inspections.find_one({"id": inspection_id})
+        if not inspection:
+            raise HTTPException(status_code=404, detail="Inspection not found")
+        
+        # Extract model-specific results from frames
+        model_results = {}
+        frames = inspection.get("defects_found", [])
+        
+        for frame in frames:
+            frame_model_results = frame.get("model_results", {})
+            
+            for model_name, defects in frame_model_results.items():
+                if model_name not in model_results:
+                    model_results[model_name] = {
+                        "total_detections": 0,
+                        "confidence_sum": 0,
+                        "defect_types": set()
+                    }
+                
+                for defect in defects:
+                    model_results[model_name]["total_detections"] += 1
+                    model_results[model_name]["confidence_sum"] += defect.get("confidence", 0)
+                    model_results[model_name]["defect_types"].add(defect.get("type", "unknown"))
+        
+        # Calculate average confidence for each model
+        performance_metrics = {}
+        for model_name, data in model_results.items():
+            total_detections = data["total_detections"]
+            avg_confidence = data["confidence_sum"] / total_detections if total_detections > 0 else 0
+            defect_types = list(data["defect_types"])
+            
+            performance_metrics[model_name] = {
+                "total_detections": total_detections,
+                "average_confidence": avg_confidence,
+                "defect_types": defect_types
+            }
+        
+        # Generate model comparison data
+        comparison_data = {
+            "inspection_id": inspection_id,
+            "performance_metrics": performance_metrics,
+            "model_strengths": {
+                "basic_cv": "Good at detecting cracks and water damage",
+                "yolov8n": "Excellent at identifying structural defects",
+                "clip": "Strong semantic understanding of defect types"
+            }
+        }
+        
+        return comparison_data
+        
+    except Exception as e:
+        logging.error(f"Error generating model comparison: {e}")
+        raise HTTPException(status_code=500, detail=f"Error generating model comparison: {e}")
+
+@api_router.post("/inspection/{inspection_id}/export-pdf", response_class=StreamingResponse)
+async def export_pdf_report(inspection_id: str, pdf_request: PDFExportRequest):
+    """Export inspection results as PDF report"""
+    try:
+        # Find the inspection
+        inspection = await db.inspections.find_one({"id": inspection_id})
+        if not inspection:
+            raise HTTPException(status_code=404, detail="Inspection not found")
+        
+        # Generate PDF report
+        pdf_content = generate_enhanced_pdf_report(
+            inspection, 
+            include_images=pdf_request.include_images,
+            include_model_comparison=pdf_request.include_model_comparison,
+            include_recommendations=pdf_request.include_recommendations
+        )
+        
+        # Return PDF as streaming response
+        return StreamingResponse(
+            io.BytesIO(pdf_content),
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f"attachment; filename=inspection_{inspection_id}.pdf"
+            }
+        )
+        
+    except Exception as e:
+        logging.error(f"Error generating PDF report: {e}")
+        raise HTTPException(status_code=500, detail=f"Error generating PDF report: {e}")
+
 @api_router.get("/inspection/{inspection_id}/frame/{frame_number}/regenerate")
 async def regenerate_frame_with_corrections(inspection_id: str, frame_number: int):
     """Regenerate frame image with user corrections applied"""
