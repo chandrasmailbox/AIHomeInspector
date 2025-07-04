@@ -118,13 +118,29 @@ const VideoUpload = ({ onAnalysisComplete }) => {
     });
   };
 
-  const getModelTypeColor = (type) => {
-    switch (type) {
-      case 'computer_vision': return 'bg-green-100 text-green-800';
-      case 'deep_learning': return 'bg-blue-100 text-blue-800';
-      case 'multimodal': return 'bg-purple-100 text-purple-800';
-      case 'segmentation': return 'bg-orange-100 text-orange-800';
+  const getModelTypeColor = (modelId) => {
+    switch (modelId) {
+      case 'basic_cv': return 'bg-green-100 text-green-800';
+      case 'yolov8n':
+      case 'yolov8s': 
+      case 'yolov8m': return 'bg-blue-100 text-blue-800';
+      case 'clip_vit_b32':
+      case 'clip_vit_l14': return 'bg-purple-100 text-purple-800';
+      case 'sam': return 'bg-orange-100 text-orange-800';
       default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getModelType = (modelId) => {
+    switch (modelId) {
+      case 'basic_cv': return 'Computer Vision';
+      case 'yolov8n':
+      case 'yolov8s': 
+      case 'yolov8m': return 'Object Detection';
+      case 'clip_vit_b32':
+      case 'clip_vit_l14': return 'Multimodal AI';
+      case 'sam': return 'Segmentation';
+      default: return 'AI Model';
     }
   };
 
