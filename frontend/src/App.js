@@ -312,6 +312,50 @@ const ResultsDisplay = ({ results, onBack }) => {
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const [isMaximized, setIsMaximized] = useState(false);
+  const [isExportingPDF, setIsExportingPDF] = useState(false);
+  const [showModelComparison, setShowModelComparison] = useState(false);
+  const [modelComparison, setModelComparison] = useState(null);
+
+  // Fetch model comparison data
+  const fetchModelComparison = async () => {
+    try {
+      const response = await axios.get(`${API}/inspection/${results.id}/model-comparison`);
+      setModelComparison(response.data);
+    } catch (error) {
+      console.error('Failed to fetch model comparison:', error);
+    }
+  };
+
+  // Export PDF report
+  const exportPDFReport = async () => {
+    setIsExportingPDF(true);
+    try {
+      const response = await axios.post(`${API}/inspection/${results.id}/export-pdf`, {
+        inspection_id: results.id,
+        include_images: true,
+        include_model_comparison: true,
+        include_recommendations: true
+      }, {
+        responseType: 'blob'
+      });
+
+      // Create download link
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `inspection_report_${results.id}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('PDF export failed:', error);
+      alert('PDF export failed. Please try again.');
+    } finally {
+      setIsExportingPDF(false);
+    }
+  };
 
   // Reset zoom and pan when frame changes
   const resetImageView = () => {
