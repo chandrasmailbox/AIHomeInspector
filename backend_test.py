@@ -15,7 +15,7 @@ import io
 import PyPDF2
 
 class HomeInspectorAPITester:
-    def __init__(self, base_url="https://f9e22b5f-b6e7-48d4-b08f-ec20119bde78.preview.emergentagent.com"):
+    def __init__(self, base_url="https://08680ac4-bbb8-46ce-a339-7129e7eec265.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.tests_run = 0
