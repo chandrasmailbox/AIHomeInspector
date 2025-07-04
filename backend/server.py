@@ -768,6 +768,52 @@ async def analyze_video(file: UploadFile = File(...)):
         logging.error(f"Video analysis error: {e}")
         raise HTTPException(status_code=500, detail=f"Error analyzing video: {e}")
 
+@api_router.post("/analyze-video-with-models", response_model=DefectDetection)
+async def analyze_video_with_models(
+    file: UploadFile = File(...),
+    selected_models: str = "basic_cv",
+    ensemble_method: str = "weighted_average", 
+    confidence_threshold: float = 0.5
+):
+    """Analyze uploaded video for defects using selected AI models"""
+    if not file.filename.lower().endswith(('.mp4', '.avi', '.mov', '.mkv')):
+        raise HTTPException(status_code=400, detail="Only video files are supported")
+    
+    try:
+        # Parse selected models
+        model_list = [model.strip() for model in selected_models.split(',')]
+        
+        # Validate models
+        valid_models = []
+        for model in model_list:
+            if model in MODEL_CONFIG and MODEL_CONFIG[model]['enabled']:
+                valid_models.append(model)
+            elif model == 'basic_cv':  # Always available
+                valid_models.append(model)
+            else:
+                logging.warning(f"Model {model} not available or disabled")
+        
+        if not valid_models:
+            valid_models = ['basic_cv']  # Fallback to basic CV
+        
+        # Read video file
+        video_bytes = await file.read()
+        
+        # Process video with selected models
+        result = await process_video_with_models_async(
+            video_bytes, 
+            file.filename, 
+            selected_models=valid_models,
+            ensemble_method=ensemble_method,
+            confidence_threshold=confidence_threshold
+        )
+        
+        return result
+        
+    except Exception as e:
+        logging.error(f"Video analysis error: {e}")
+        raise HTTPException(status_code=500, detail=f"Error analyzing video: {e}")
+
 @api_router.get("/inspections", response_model=List[DefectDetection])
 async def get_inspections():
     """Get all inspection results"""
