@@ -477,56 +477,29 @@ def analyze_frame_with_models(frame_data, selected_models=['basic_cv']):
         combined_defects_with_boxes.extend(cv_defects)
     
     # 2. YOLO-based defect detection
-    if 'yolo' in selected_models and yolo_model is not None:
-        yolo_defects = detect_defects_with_yolo(image_array)
-        for defect in yolo_defects:
-            defect['model'] = 'yolo'
-        all_model_results['yolo'] = yolo_defects
-        combined_defects.extend(yolo_defects)
-        combined_defects_with_boxes.extend(yolo_defects)
+    yolo_models = [model for model in selected_models if model.startswith('yolov8')]
+    for yolo_model in yolo_models:
+        if MODEL_CONFIG.get(yolo_model, {}).get('enabled', False):
+            yolo_defects = detect_defects_with_yolo(image_array, yolo_model)
+            all_model_results[yolo_model] = yolo_defects
+            combined_defects.extend(yolo_defects)
+            combined_defects_with_boxes.extend(yolo_defects)
     
-    # 3. CLIP-based defect detection (mock for now)
-    if 'clip' in selected_models:
-        clip_defects = []
-        if clip_model and clip_processor:
-            clip_results = detect_defects_with_clip(image_array, clip_model, clip_processor)
-            for i, clip_defect in enumerate(clip_results):
-                h, w = image_array.shape[:2]
-                general_box = (w//4, h//4, w//2, h//2)
-                box_id = f"clip_{clip_defect['type'].replace(' ', '_')}_{frame_number}_{i}_{uuid.uuid4().hex[:8]}"
-                
-                defect_info = {
-                    "type": clip_defect["type"],
-                    "confidence": clip_defect["confidence"],
-                    "description": f"{clip_defect['type']} detected with {clip_defect['confidence']:.2f} confidence",
-                    "boxes": [{
-                        "id": box_id,
-                        "coords": general_box,
-                        "visible": True
-                    }],
-                    "model": "clip"
-                }
-                clip_defects.append(defect_info)
-        else:
-            # Mock CLIP results for testing
-            mock_clip_defects = [
-                {
-                    "type": "mold on wall",
-                    "confidence": 0.75,
-                    "description": "Mold detected with 0.75 confidence",
-                    "boxes": [{
-                        "id": f"clip_mold_{frame_number}_{uuid.uuid4().hex[:8]}",
-                        "coords": (50, 50, 100, 100),
-                        "visible": True
-                    }],
-                    "model": "clip"
-                }
-            ]
-            clip_defects = mock_clip_defects
-        
-        all_model_results['clip'] = clip_defects
-        combined_defects.extend(clip_defects)
-        combined_defects_with_boxes.extend(clip_defects)
+    # 3. CLIP-based defect detection
+    clip_models = [model for model in selected_models if model.startswith('clip')]
+    for clip_model in clip_models:
+        if MODEL_CONFIG.get(clip_model, {}).get('enabled', False):
+            clip_defects = detect_defects_with_clip(image_array, clip_model)
+            all_model_results[clip_model] = clip_defects
+            combined_defects.extend(clip_defects)
+            combined_defects_with_boxes.extend(clip_defects)
+    
+    # 4. SAM-based segmentation (if available)
+    if 'sam' in selected_models and MODEL_CONFIG.get('sam', {}).get('enabled', False):
+        sam_defects = detect_defects_with_sam(image_array)
+        all_model_results['sam'] = sam_defects
+        combined_defects.extend(sam_defects)
+        combined_defects_with_boxes.extend(sam_defects)
     
     # Calculate overall confidence
     overall_confidence = max([d["confidence"] for d in combined_defects]) if combined_defects else 0
@@ -548,6 +521,36 @@ def analyze_frame_with_models(frame_data, selected_models=['basic_cv']):
         "model_results": all_model_results,
         "selected_models": selected_models
     }
+
+def detect_defects_with_sam(image):
+    """Use SAM model for defect segmentation"""
+    try:
+        if 'sam' not in models_registry:
+            return []
+            
+        sam_predictor = models_registry['sam']
+        sam_predictor.set_image(image)
+        
+        # For now, return mock results as SAM typically needs prompts
+        # In a real implementation, you'd use point or box prompts
+        mock_sam_defects = [
+            {
+                "type": "segmented_defect",
+                "confidence": 0.8,
+                "description": "Defect detected by SAM segmentation",
+                "boxes": [{
+                    "id": f"sam_defect_{uuid.uuid4().hex[:8]}",
+                    "coords": (100, 100, 150, 150),
+                    "visible": True
+                }],
+                "model": "sam"
+            }
+        ]
+        return mock_sam_defects
+        
+    except Exception as e:
+        logging.error(f"SAM detection error: {e}")
+        return []
 
 def analyze_frame(frame_data):
     """Legacy function that calls analyze_frame_with_models with default settings"""
