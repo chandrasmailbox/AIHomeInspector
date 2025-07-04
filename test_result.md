@@ -156,11 +156,14 @@ backend:
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "Model selection API, ensemble methods, and model comparison analysis implemented"
+      - working: true
+        agent: "testing"
+        comment: "Tested model selection and ensemble API. The system successfully provides model comparison data with performance metrics."
 
   - task: "Enhanced Video Analysis with Model Selection"
     implemented: true
