@@ -243,11 +243,21 @@ const VideoUpload = ({ onAnalysisComplete }) => {
                                 className="text-blue-600"
                               />
                               <span className="font-medium text-gray-800">{model.name}</span>
-                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getModelTypeColor(model.type)}`}>
-                                {model.type}
-                              </span>
+                              {model.enabled && (
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${getModelTypeColor(model.id)}`}>
+                                  {getModelType(model.id)}
+                                </span>
+                              )}
+                              {!model.enabled && (
+                                <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500">
+                                  Disabled
+                                </span>
+                              )}
                             </div>
                             <p className="text-sm text-gray-600 mt-1 ml-6">{model.description}</p>
+                            {!model.loaded && model.enabled && (
+                              <p className="text-xs text-orange-600 mt-1 ml-6">Model not loaded</p>
+                            )}
                           </div>
                         </div>
                       </div>
