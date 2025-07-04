@@ -803,8 +803,8 @@ async def startup_event():
 async def shutdown_db_client():
     client.close()
 
-def generate_pdf_report(inspection_data):
-    """Generate PDF report for inspection results"""
+def generate_enhanced_pdf_report(inspection_data, include_images=True, include_model_comparison=True, include_recommendations=True):
+    """Generate enhanced PDF report for inspection results"""
     try:
         # Create a temporary file for the PDF
         with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as temp_file:
@@ -833,23 +833,43 @@ def generate_pdf_report(inspection_data):
             textColor=colors.HexColor('#1e40af')
         )
         
-        # Title
-        story.append(Paragraph("HomeInspector AI - Defect Analysis Report", title_style))
+        subheading_style = ParagraphStyle(
+            'CustomSubHeading',
+            parent=styles['Heading3'],
+            fontSize=14,
+            spaceAfter=8,
+            textColor=colors.HexColor('#3b82f6')
+        )
+        
+        # Title and Executive Summary
+        story.append(Paragraph("HomeInspector AI - Comprehensive Defect Analysis Report", title_style))
         story.append(Spacer(1, 20))
         
+        # Executive Summary
+        story.append(Paragraph("Executive Summary", heading_style))
+        executive_summary = f"""
+        This comprehensive inspection report was generated using advanced AI technology to identify and analyze structural defects.
+        The inspection utilized {len(inspection_data.get('selected_models', ['basic_cv']))} different AI models to ensure accurate detection.
+        A total of {inspection_data.get('summary', {}).get('total_defects_found', 0)} defects were identified across 
+        {inspection_data.get('summary', {}).get('frames_analyzed', 0)} analyzed frames.
+        """
+        story.append(Paragraph(executive_summary, styles['Normal']))
+        story.append(Spacer(1, 15))
+        
         # Inspection Summary
-        story.append(Paragraph("Inspection Summary", heading_style))
+        story.append(Paragraph("Inspection Details", heading_style))
         
         summary_data = [
-            ['Property', inspection_data.get('filename', 'Unknown')],
+            ['Property/File', inspection_data.get('filename', 'Unknown')],
             ['Inspection Date', inspection_data.get('timestamp', datetime.utcnow()).strftime('%Y-%m-%d %H:%M:%S')],
             ['Total Frames Analyzed', str(inspection_data.get('total_frames', 0))],
             ['Defects Found', str(inspection_data.get('summary', {}).get('total_defects_found', 0))],
             ['Severity Level', inspection_data.get('summary', {}).get('severity', 'Unknown').upper()],
-            ['Models Used', ', '.join(inspection_data.get('selected_models', ['basic_cv']))]
+            ['AI Models Used', ', '.join(inspection_data.get('selected_models', ['basic_cv']))],
+            ['High Confidence Detections', str(inspection_data.get('summary', {}).get('high_confidence_detections', 0))]
         ]
         
-        summary_table = Table(summary_data, colWidths=[2*inch, 4*inch])
+        summary_table = Table(summary_data, colWidths=[2.5*inch, 3.5*inch])
         summary_table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#f3f4f6')),
             ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
@@ -863,19 +883,59 @@ def generate_pdf_report(inspection_data):
         story.append(summary_table)
         story.append(Spacer(1, 20))
         
+        # Model Performance Section
+        if include_model_comparison and 'model_comparison' in inspection_data:
+            story.append(Paragraph("AI Model Performance Analysis", heading_style))
+            
+            model_comparison = inspection_data['model_comparison']
+            performance_metrics = model_comparison.get('performance_metrics', {})
+            
+            if performance_metrics:
+                model_data = [['Model', 'Detections', 'Avg Confidence', 'Defect Types']]
+                
+                for model_name, metrics in performance_metrics.items():
+                    model_display_name = MODEL_CONFIG.get(model_name, {}).get('name', model_name)
+                    model_data.append([
+                        model_display_name,
+                        str(metrics.get('total_detections', 0)),
+                        f"{metrics.get('average_confidence', 0):.2f}",
+                        str(len(metrics.get('defect_types', [])))
+                    ])
+                
+                model_table = Table(model_data, colWidths=[2*inch, 1*inch, 1.5*inch, 1.5*inch])
+                model_table.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1e40af')),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                    ('FONTSIZE', (0, 0), (-1, -1), 9),
+                    ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                    ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+                ]))
+                
+                story.append(model_table)
+                story.append(Spacer(1, 15))
+        
         # Defect Types Found
         defect_types = inspection_data.get('summary', {}).get('defect_types', [])
         if defect_types:
-            story.append(Paragraph("Detected Issues", heading_style))
+            story.append(Paragraph("Detected Issues & Recommendations", heading_style))
             
-            defect_table_data = [['Defect Type', 'Severity', 'Recommendations']]
+            defect_table_data = [['Defect Type', 'Severity', 'Priority', 'Recommendations']]
             
             for defect_type in defect_types:
                 severity = get_defect_severity(defect_type)
+                priority = get_defect_priority(defect_type)
                 recommendations = get_defect_recommendations(defect_type)
-                defect_table_data.append([defect_type.replace('_', ' ').title(), severity, recommendations])
+                defect_table_data.append([
+                    defect_type.replace('_', ' ').title(),
+                    severity,
+                    priority,
+                    recommendations
+                ])
             
-            defect_table = Table(defect_table_data, colWidths=[2*inch, 1*inch, 3*inch])
+            defect_table = Table(defect_table_data, colWidths=[1.5*inch, 0.8*inch, 0.8*inch, 2.9*inch])
             defect_table.setStyle(TableStyle([
                 ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1e40af')),
                 ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
@@ -890,78 +950,133 @@ def generate_pdf_report(inspection_data):
             story.append(defect_table)
             story.append(Spacer(1, 20))
         
-        # Frame Analysis with Images
-        story.append(Paragraph("Detailed Frame Analysis", heading_style))
-        story.append(Paragraph("The following pages show frames with detected defects and their locations.", styles['Normal']))
+        # Technical Analysis Section
+        story.append(Paragraph("Technical Analysis Details", heading_style))
+        
+        # Statistical Summary
+        total_detections = inspection_data.get('summary', {}).get('total_defects_found', 0)
+        frames_analyzed = inspection_data.get('summary', {}).get('frames_analyzed', 0)
+        detection_rate = (total_detections / frames_analyzed * 100) if frames_analyzed > 0 else 0
+        
+        stats_text = f"""
+        Detection Statistics:
+        • Detection Rate: {detection_rate:.1f}% (defects per frame)
+        • Models Consensus: {len(inspection_data.get('selected_models', []))} AI models used for validation
+        • Confidence Threshold: Applied for reliable detection filtering
+        • Analysis Method: Multi-model ensemble approach for enhanced accuracy
+        """
+        story.append(Paragraph(stats_text, styles['Normal']))
+        story.append(Spacer(1, 15))
+        
+        # Page break before detailed frame analysis
         story.append(PageBreak())
         
-        # Add frames with defects
-        frames_with_defects = [frame for frame in inspection_data.get('defects_found', []) if frame.get('defects')]
-        
-        for i, frame in enumerate(frames_with_defects[:10]):  # Limit to first 10 frames
-            story.append(Paragraph(f"Frame {frame.get('frame_number', i+1)} Analysis", heading_style))
+        # Frame Analysis with Images
+        if include_images:
+            story.append(Paragraph("Detailed Frame Analysis with Defect Locations", heading_style))
+            story.append(Paragraph("The following pages show frames with detected defects, their exact locations, and confidence scores from multiple AI models.", styles['Normal']))
+            story.append(Spacer(1, 15))
             
-            # Add frame image if available
-            if frame.get('frame_image'):
-                try:
-                    # Decode base64 image
-                    image_data = base64.b64decode(frame['frame_image'])
-                    
-                    # Create temporary image file
-                    with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as img_temp:
-                        img_temp.write(image_data)
-                        img_path = img_temp.name
-                    
-                    # Add image to PDF
-                    img = ReportImage(img_path, width=5*inch, height=3.75*inch)
-                    story.append(img)
-                    
-                    # Clean up temp image
-                    os.unlink(img_path)
-                    
-                except Exception as e:
-                    story.append(Paragraph(f"[Image could not be loaded: {e}]", styles['Normal']))
+            # Add frames with defects
+            frames_with_defects = [frame for frame in inspection_data.get('defects_found', []) if frame.get('defects')]
             
-            story.append(Spacer(1, 10))
-            
-            # Frame details
-            frame_details = [
-                ['Confidence Score', f"{frame.get('confidence_score', 0) * 100:.1f}%"],
-                ['Defects Found', str(len(frame.get('defects', [])))]
-            ]
-            
-            if frame.get('selected_models'):
-                frame_details.append(['Models Used', ', '.join(frame['selected_models'])])
-            
-            frame_table = Table(frame_details, colWidths=[2*inch, 2*inch])
-            frame_table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#f3f4f6')),
-                ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
-                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-                ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, -1), 9),
-                ('GRID', (0, 0), (-1, -1), 1, colors.black),
-            ]))
-            
-            story.append(frame_table)
-            story.append(Spacer(1, 10))
-            
-            # Defect details for this frame
-            if frame.get('defects'):
-                defect_list = []
-                for defect in frame['defects']:
-                    defect_text = f"• {defect.get('type', 'Unknown').replace('_', ' ').title()}: "
-                    defect_text += f"{defect.get('confidence', 0) * 100:.1f}% confidence"
-                    if defect.get('model'):
-                        defect_text += f" (detected by {defect['model']})"
-                    defect_list.append(defect_text)
+            for i, frame in enumerate(frames_with_defects[:15]):  # Limit to first 15 frames
+                story.append(Paragraph(f"Frame {frame.get('frame_number', i+1)} Analysis", subheading_style))
                 
-                story.append(Paragraph("Detected Defects:", styles['Heading3']))
-                for defect_text in defect_list:
-                    story.append(Paragraph(defect_text, styles['Normal']))
+                # Add frame image if available
+                if frame.get('frame_image'):
+                    try:
+                        # Decode base64 image
+                        image_data = base64.b64decode(frame['frame_image'])
+                        
+                        # Create temporary image file
+                        with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as img_temp:
+                            img_temp.write(image_data)
+                            img_path = img_temp.name
+                        
+                        # Add image to PDF
+                        img = ReportImage(img_path, width=5*inch, height=3.75*inch)
+                        story.append(img)
+                        
+                        # Clean up temp image
+                        os.unlink(img_path)
+                        
+                    except Exception as e:
+                        story.append(Paragraph(f"[Image could not be loaded: {e}]", styles['Normal']))
+                
+                story.append(Spacer(1, 10))
+                
+                # Frame details with model breakdown
+                frame_details = [
+                    ['Overall Confidence', f"{frame.get('confidence_score', 0) * 100:.1f}%"],
+                    ['Total Defects', str(len(frame.get('defects', [])))],
+                    ['Models Used', ', '.join(frame.get('selected_models', []))]
+                ]
+                
+                frame_table = Table(frame_details, colWidths=[2*inch, 2*inch])
+                frame_table.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#f3f4f6')),
+                    ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
+                    ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                    ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+                    ('FONTSIZE', (0, 0), (-1, -1), 9),
+                    ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                ]))
+                
+                story.append(frame_table)
+                story.append(Spacer(1, 10))
+                
+                # Defect details for this frame with model information
+                if frame.get('defects'):
+                    story.append(Paragraph("Detected Defects:", styles['Heading4']))
+                    defect_list = []
+                    
+                    for defect in frame['defects']:
+                        defect_text = f"• {defect.get('type', 'Unknown').replace('_', ' ').title()}: "
+                        defect_text += f"{defect.get('confidence', 0) * 100:.1f}% confidence"
+                        if defect.get('model'):
+                            model_name = MODEL_CONFIG.get(defect['model'], {}).get('name', defect['model'])
+                            defect_text += f" (detected by {model_name})"
+                        if defect.get('boxes'):
+                            defect_text += f" | {len(defect['boxes'])} location(s)"
+                        defect_list.append(defect_text)
+                    
+                    for defect_text in defect_list:
+                        story.append(Paragraph(defect_text, styles['Normal']))
+                
+                if i < len(frames_with_defects) - 1:  # Don't add page break after last frame
+                    story.append(PageBreak())
+        
+        # Recommendations and Next Steps
+        if include_recommendations:
+            story.append(PageBreak())
+            story.append(Paragraph("Professional Recommendations & Next Steps", heading_style))
             
-            if i < len(frames_with_defects) - 1:  # Don't add page break after last frame
-                story.append(PageBreak())
+            recommendations_text = f"""
+            Based on the AI analysis findings, the following actions are recommended:
+            
+            Immediate Actions Required:
+            • Review all high-confidence detections marked in this report
+            • Prioritize {inspection_data.get('summary', {}).get('severity', 'medium').upper()} severity issues for professional inspection
+            • Consider multiple model consensus for validation of critical findings
+            
+            Professional Consultation:
+            • Engage structural engineers for any structural damage findings
+            • Contact specialized contractors for water damage or mold issues
+            • Schedule follow-up inspections for monitoring defect progression
+            
+            Documentation:
+            • Keep this AI analysis report for insurance and maintenance records
+            • Document any remediation work performed
+            • Schedule periodic re-analysis for monitoring purposes
+            
+            Technical Notes:
+            • This report was generated using {len(inspection_data.get('selected_models', []))} AI models for enhanced accuracy
+            • Confidence scores indicate the AI's certainty in detection accuracy
+            • Multiple model consensus provides additional validation for findings
+            """
+            
+            story.append(Paragraph(recommendations_text, styles['Normal']))
         
         # Build PDF
         doc.build(story)
@@ -976,8 +1091,26 @@ def generate_pdf_report(inspection_data):
         return pdf_content
         
     except Exception as e:
-        logging.error(f"PDF generation error: {e}")
-        raise HTTPException(status_code=500, detail=f"Error generating PDF report: {e}")
+        logging.error(f"Enhanced PDF generation error: {e}")
+        raise HTTPException(status_code=500, detail=f"Error generating enhanced PDF report: {e}")
+
+def get_defect_priority(defect_type):
+    """Get priority level for defect type"""
+    priority_mapping = {
+        'cracks': 'Critical',
+        'water_damage': 'Critical',
+        'mold': 'Critical',
+        'structural_damage': 'Critical',
+        'rust': 'High',
+        'paint': 'Low',
+        'tiles': 'Medium',
+        'flooring': 'Medium'
+    }
+    
+    for key, priority in priority_mapping.items():
+        if key in defect_type.lower():
+            return priority
+    return 'Medium'
 
 def get_defect_severity(defect_type):
     """Get severity level for defect type"""
