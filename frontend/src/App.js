@@ -227,7 +227,7 @@ const VideoUpload = ({ onAnalysisComplete }) => {
                 <div>
                   <h4 className="font-medium text-gray-700 mb-3">Available AI Models</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {availableModels.map(model => (
+                    {availableModels.filter(model => model.enabled).map(model => (
                       <div key={model.id} className={`border rounded-lg p-3 cursor-pointer transition-colors ${
                         selectedModels.includes(model.id) 
                           ? 'border-blue-500 bg-blue-50' 
