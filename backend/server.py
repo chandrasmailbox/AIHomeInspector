@@ -108,7 +108,7 @@ api_router = APIRouter(prefix="/api")
 clip_model = None
 clip_processor = None
 yolo_model = None
-available_models = ['basic_cv', 'yolo', 'clip']
+available_models = ['basic_cv', 'yolov8n', 'yolov8s', 'yolov8m', 'clip_vit_b32', 'clip_vit_l14', 'sam']
 executor = ThreadPoolExecutor(max_workers=2)
 
 # Initialize AI models
